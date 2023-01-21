@@ -49,8 +49,12 @@ def run_diffusers(
     seed: str,
     image_format: str,
     legacy: bool,
+    video: bool,
+    fps: float,
+    firststep: int,
+    laststep: int,
 ) -> Tuple[list, str]:
-    global model_name
+    global model_name, frames_path, short_prompt, reverse, ffmpegstart
     global current_pipe
     global pipe
 
@@ -75,10 +79,13 @@ def run_diffusers(
     output_path = "output"
     os.makedirs(output_path, exist_ok=True)
     dir_list = os.listdir(output_path)
-    if len(dir_list):
-        pattern = re.compile(r"([0-9][0-9][0-9][0-9][0-9][0-9])-([0-9][0-9])\..*")
-        match_list = [pattern.match(f) for f in dir_list]
-        next_index = max([int(m[1]) if m else -1 for m in match_list]) + 1
+    if video is False:
+        if len(dir_list) and video is False:
+            pattern = re.compile(r"([0-9][0-9][0-9][0-9][0-9][0-9])-([0-9][0-9])\..*")
+            match_list = [pattern.match(f) for f in dir_list]
+            next_index = max([int(m[1]) if m else -1 for m in match_list]) + 1
+        else:
+            next_index = 0
     else:
         next_index = 0
 
@@ -86,70 +93,30 @@ def run_diffusers(
     neg_prompt = None if neg_prompt == "" else neg_prompt
     images = []
     time_taken = 0
-    for i in range(iteration_count):
-        print(f"iteration {i + 1}/{iteration_count}")
 
-        info = (
-            f"{next_index + i:06} | prompt: {prompt} negative prompt: {neg_prompt} | scheduler: {sched_name} "
-            + f"model: {model_name} iteration size: {iteration_count} batch size: {batch_size} steps: {steps} "
-            + f"scale: {guidance_scale} height: {height} width: {width} eta: {eta} seed: {seeds[i]}"
-        )
-        if current_pipe == "img2img":
-            info = info + f" denoise: {denoise_strength}"
-        with open(os.path.join(output_path, "history.txt"), "a") as log:
-            log.write(info + "\n")
+    # video
+    if video is False:
+        for i in range(iteration_count):
+            print(f"iteration {i + 1}/{iteration_count}")
 
-        # create generator object from seed
-        rng = np.random.RandomState(seeds[i])
+            info = (
+                f"{next_index + i:06} | prompt: {prompt} negative prompt: {neg_prompt} | scheduler: {sched_name} "
+                + f"model: {model_name} iteration size: {iteration_count} batch size: {batch_size} steps: {steps} "
+                + f"scale: {guidance_scale} height: {height} width: {width} eta: {eta} seed: {seeds[i]}"
+            )
+            if current_pipe == "img2img":
+                info = info + f" denoise: {denoise_strength}"
+            with open(os.path.join(output_path, "history.txt"), "a") as log:
+                log.write(info + "\n")
 
-        if current_pipe == "txt2img":
-            start = time.time()
-            batch_images = pipe(
-                prompt,
-                negative_prompt=neg_prompt,
-                height=height,
-                width=width,
-                num_inference_steps=steps,
-                guidance_scale=guidance_scale,
-                eta=eta,
-                num_images_per_prompt=batch_size,
-                generator=rng,
-            ).images
-            finish = time.time()
-        elif current_pipe == "img2img":
-            start = time.time()
-            batch_images = pipe(
-                prompt,
-                negative_prompt=neg_prompt,
-                image=init_image,
-                num_inference_steps=steps,
-                guidance_scale=guidance_scale,
-                eta=eta,
-                strength=denoise_strength,
-                num_images_per_prompt=batch_size,
-                generator=rng,
-            ).images
-            finish = time.time()
-        elif current_pipe == "inpaint":
-            start = time.time()
-            if legacy is True:
+            # create generator object from seed
+            rng = np.random.RandomState(seeds[i])
+
+            if current_pipe == "txt2img":
+                start = time.time()
                 batch_images = pipe(
                     prompt,
                     negative_prompt=neg_prompt,
-                    image=init_image,
-                    mask_image=init_mask,
-                    num_inference_steps=steps,
-                    guidance_scale=guidance_scale,
-                    eta=eta,
-                    num_images_per_prompt=batch_size,
-                    generator=rng,
-                ).images
-            else:
-                batch_images = pipe(
-                    prompt,
-                    negative_prompt=neg_prompt,
-                    image=init_image,
-                    mask_image=init_mask,
                     height=height,
                     width=width,
                     num_inference_steps=steps,
@@ -158,41 +125,228 @@ def run_diffusers(
                     num_images_per_prompt=batch_size,
                     generator=rng,
                 ).images
-            finish = time.time()
+                finish = time.time()
+            elif current_pipe == "img2img":
+                start = time.time()
+                batch_images = pipe(
+                    prompt,
+                    negative_prompt=neg_prompt,
+                    image=init_image,
+                    num_inference_steps=steps,
+                    guidance_scale=guidance_scale,
+                    eta=eta,
+                    strength=denoise_strength,
+                    num_images_per_prompt=batch_size,
+                    generator=rng,
+                ).images
+                finish = time.time()
+            elif current_pipe == "inpaint":
+                start = time.time()
+                if legacy is True:
+                    batch_images = pipe(
+                        prompt,
+                        negative_prompt=neg_prompt,
+                        image=init_image,
+                        mask_image=init_mask,
+                        num_inference_steps=steps,
+                        guidance_scale=guidance_scale,
+                        eta=eta,
+                        num_images_per_prompt=batch_size,
+                        generator=rng,
+                    ).images
+                else:
+                    batch_images = pipe(
+                        prompt,
+                        negative_prompt=neg_prompt,
+                        image=init_image,
+                        mask_image=init_mask,
+                        height=height,
+                        width=width,
+                        num_inference_steps=steps,
+                        guidance_scale=guidance_scale,
+                        eta=eta,
+                        num_images_per_prompt=batch_size,
+                        generator=rng,
+                    ).images
+                finish = time.time()
 
-        short_prompt = prompt.strip('<>:"/\\|?*\n\t')
-        short_prompt = re.sub(r'[\\/*?:"<>|\n\t]', "", short_prompt)
-        short_prompt = short_prompt[:99] if len(short_prompt) > 100 else short_prompt
+            short_prompt = prompt.strip('<>:"/\\|?*\n\t')
+            short_prompt = re.sub(r'[\\/*?:"<>|\n\t]', "", short_prompt)
+            short_prompt = (
+                short_prompt[:64] if len(short_prompt) > 64 else short_prompt
+            )
 
-        # png output
-        if image_format == "png":
-            for j in range(batch_size):
-                batch_images[j].save(
-                    os.path.join(
-                        output_path,
-                        f"{next_index + i:06}-{j:02}.{short_prompt}.{image_format}",
-                    ),
-                    optimize=True,
-                )
-        # jpg output
-        elif image_format == "jpg":
-            for j in range(batch_size):
-                batch_images[j].save(
-                    os.path.join(
-                        output_path,
-                        f"{next_index + i:06}-{j:02}.{short_prompt}.{image_format}",
-                    ),
-                    quality=95,
-                    subsampling=0,
-                    optimize=True,
-                    progressive=True,
-                )
+            # png output
+            if image_format == "png":
+                for j in range(batch_size):
+                    batch_images[j].save(
+                        os.path.join(
+                            output_path,
+                            f"{next_index + i:06}-{j:02}.{short_prompt}_{seeds[i]}.{image_format}",
+                        ),
+                        optimize=True,
+                    )
+            # jpg output
+            elif image_format == "jpg":
+                for j in range(batch_size):
+                    batch_images[j].save(
+                        os.path.join(
+                            output_path,
+                            f"{next_index + i:06}-{j:02}.{short_prompt}_{seeds[i]}.{image_format}",
+                        ),
+                        quality=95,
+                        subsampling=0,
+                        optimize=True,
+                        progressive=True,
+                    )
 
-        images.extend(batch_images)
-        time_taken = time_taken + (finish - start)
+            images.extend(batch_images)
+            time_taken = time_taken + (finish - start)
+    else:
+        if firststep > laststep:
+            stepdirection = -1
+            ffmpegstart = laststep
+            reverse = " -vf reverse"
+        else:
+            stepdirection = 1
+            ffmpegstart = firststep
+            reverse = ""
+        for step in range(firststep, (laststep + stepdirection), stepdirection):
+            print(f"step {step}/{laststep} for video frames")
+
+            short_prompt = prompt.strip('<>:"/\\|?*\n\t')
+            short_prompt = re.sub(r'[\\/*?:"<>|\n\t]', "", short_prompt)
+            short_prompt = short_prompt[:64] if len(short_prompt) > 32 else short_prompt
+            frames_path = (
+                output_path + f"/{short_prompt}_{seed}_{firststep}-{laststep}_{fps}fps"
+            )
+            os.makedirs(frames_path, exist_ok=True)
+
+            info = (
+                f"{next_index + step:06} | prompt: {prompt} negative prompt: {neg_prompt} | scheduler: {sched_name} "
+                + f"model: {model_name} iteration size: {iteration_count} batch size: {batch_size} steps: {step} "
+                + f"scale: {guidance_scale} height: {height} width: {width} eta: {eta} seed: {seed}"
+            )
+            if current_pipe == "img2img":
+                info = info + f" denoise: {denoise_strength}"
+            with open(os.path.join(frames_path, "history.txt"), "a") as log:
+                log.write(info + "\n")
+
+            # create generator object from seed
+            rng = np.random.RandomState(seed)
+
+            if current_pipe == "txt2img":
+                start = time.time()
+                batch_images = pipe(
+                    prompt,
+                    negative_prompt=neg_prompt,
+                    height=height,
+                    width=width,
+                    num_inference_steps=step,
+                    guidance_scale=guidance_scale,
+                    eta=eta,
+                    num_images_per_prompt=batch_size,
+                    generator=rng,
+                ).images
+                finish = time.time()
+            elif current_pipe == "img2img":
+                start = time.time()
+                batch_images = pipe(
+                    prompt,
+                    negative_prompt=neg_prompt,
+                    image=init_image,
+                    num_inference_steps=step,
+                    guidance_scale=guidance_scale,
+                    eta=eta,
+                    strength=denoise_strength,
+                    num_images_per_prompt=batch_size,
+                    generator=rng,
+                ).images
+                finish = time.time()
+            elif current_pipe == "inpaint":
+                start = time.time()
+                if legacy is True:
+                    batch_images = pipe(
+                        prompt,
+                        negative_prompt=neg_prompt,
+                        image=init_image,
+                        mask_image=init_mask,
+                        num_inference_steps=step,
+                        guidance_scale=guidance_scale,
+                        eta=eta,
+                        num_images_per_prompt=batch_size,
+                        generator=rng,
+                    ).images
+                else:
+                    batch_images = pipe(
+                        prompt,
+                        negative_prompt=neg_prompt,
+                        image=init_image,
+                        mask_image=init_mask,
+                        height=height,
+                        width=width,
+                        num_inference_steps=step,
+                        guidance_scale=guidance_scale,
+                        eta=eta,
+                        num_images_per_prompt=batch_size,
+                        generator=rng,
+                    ).images
+                finish = time.time()
+
+            short_prompt = prompt.strip('<>:"/\\|?*\n\t')
+            short_prompt = re.sub(r'[\\/*?:"<>|\n\t]', "", short_prompt)
+            short_prompt = short_prompt[:64] if len(short_prompt) > 32 else short_prompt
+
+            # png output
+            if image_format == "png":
+                for j in range(batch_size):
+                    if firststep > laststep:
+                        batch_images[j].save(
+                            os.path.join(
+                                frames_path,
+                                f"{next_index + step:06}-{j:02}.{short_prompt}_{seed}.{image_format}",
+                            ),
+                            optimize=True,
+                        )
+                    else:
+                        batch_images[j].save(
+                            os.path.join(
+                                frames_path,
+                                f"{next_index + step:06}-{j:02}.{short_prompt}_{seed}.{image_format}",
+                            ),
+                            optimize=True,
+                        )
+            # jpg output
+            elif image_format == "jpg":
+                for j in range(batch_size):
+                    if firststep > laststep:
+                        batch_images[j].save(
+                            os.path.join(
+                                frames_path,
+                                f"{next_index + step:06}-{j:02}.{short_prompt}_{seed}.{image_format}",
+                            ),
+                            quality=95,
+                            subsampling=0,
+                            optimize=True,
+                            progressive=True,
+                        )
+                    else:
+                        batch_images[j].save(
+                            os.path.join(
+                                frames_path,
+                                f"{next_index + step:06}-{j:02}.{short_prompt}_{seed}.{image_format}",
+                            ),
+                            quality=95,
+                            subsampling=0,
+                            optimize=True,
+                            progressive=True,
+                        )
+
+            images.extend(batch_images)
+            time_taken = time_taken + (finish - start)
 
     time_taken = time_taken / 60.0
-    if iteration_count > 1:
+    if iteration_count > 1 or video is True:
         status = (
             f"Run indexes {next_index:06} to {next_index + iteration_count - 1:06} took {time_taken:.1f} minutes "
             + f"to generate {iteration_count} iterations with batch size of {batch_size}. seeds: "
@@ -202,6 +356,18 @@ def run_diffusers(
         status = (
             f"Run index {next_index:06} took {time_taken:.1f} minutes to generate a batch size of "
             + f"{batch_size}. seed: {seeds[0]}"
+        )
+    short_prompt = prompt.strip('<>:"/\\|?*\n\t')
+    short_prompt = re.sub(r'[\\/*?:"<>|\n\t]', "", short_prompt)
+    short_prompt = short_prompt[:64] if len(short_prompt) > 32 else short_prompt
+    frames_path = (
+            output_path + f"/{short_prompt}_{seed}_{firststep}-{laststep}_{fps}fps"
+    )
+
+    if video is True:
+        os.system(
+            f'ffmpeg -f image2 -r {fps} -start_number {ffmpegstart} -i "{frames_path}/%06d-00.{short_prompt}_{seed}.{image_format}" -vcodec libx264 '
+            + f'-crf 17 -preset veryslow{reverse} "videooutput/{short_prompt}_{seed}_{firststep}-{laststep}_{fps}fps.mp4"'
         )
 
     return images, status
@@ -240,6 +406,10 @@ def clear_click():
             eta_t0: 0.0,
             seed_t0: "",
             fmt_t0: "png",
+            video_t0: False,
+            fps_t0: 7.5,
+            firststep_t0: 1,
+            laststep_t0: 15,
         }
     elif current_tab == 1:
         return {
@@ -257,6 +427,10 @@ def clear_click():
             denoise_t1: 0.8,
             seed_t1: "",
             fmt_t1: "png",
+            video_t1: False,
+            fps_t1: 7.5,
+            firststep_t1: 1,
+            laststep_t1: 15,
         }
     elif current_tab == 2:
         return {
@@ -274,6 +448,10 @@ def clear_click():
             eta_t2: 0.0,
             seed_t2: "",
             fmt_t2: "png",
+            video_t2: False,
+            fps_t2: 7.5,
+            firststep_t2: 1,
+            laststep_t2: 15,
         }
 
 
@@ -291,6 +469,10 @@ def generate_click(
     eta_t0,
     seed_t0,
     fmt_t0,
+    video_t0,
+    fps_t0,
+    firststep_t0,
+    laststep_t0,
     prompt_t1,
     neg_prompt_t1,
     image_t1,
@@ -305,6 +487,10 @@ def generate_click(
     denoise_t1,
     seed_t1,
     fmt_t1,
+    video_t1,
+    fps_t1,
+    firststep_t1,
+    laststep_t1,
     prompt_t2,
     neg_prompt_t2,
     sch_t2,
@@ -319,6 +505,10 @@ def generate_click(
     eta_t2,
     seed_t2,
     fmt_t2,
+    video_t2,
+    fps_t2,
+    firststep_t2,
+    laststep_t2,
 ):
     global model_name
     global provider
@@ -443,7 +633,6 @@ def generate_click(
                         scheduler=scheduler,
                         text_encoder=cpuclip,
                         vae_decoder=cpuvae,
-                        vae_encoder=None,
                     )
                 else:
                     pipe = OnnxStableDiffusionImg2ImgPipeline.from_pretrained(
@@ -465,7 +654,6 @@ def generate_click(
                         provider=provider,
                         scheduler=scheduler,
                         vae_decoder=cpuvae,
-                        vae_encoder=None,
                     )
                 else:
                     pipe = OnnxStableDiffusionImg2ImgPipeline.from_pretrained(
@@ -495,7 +683,6 @@ def generate_click(
                             scheduler=scheduler,
                             text_encoder=cpuclip,
                             vae_decoder=cpuvae,
-                            vae_encoder=None,
                         )
                     else:
                         pipe = OnnxStableDiffusionInpaintPipelineLegacy.from_pretrained(
@@ -517,7 +704,6 @@ def generate_click(
                             provider=provider,
                             scheduler=scheduler,
                             vae_decoder=cpuvae,
-                            vae_encoder=None,
                         )
                     else:
                         pipe = OnnxStableDiffusionInpaintPipelineLegacy.from_pretrained(
@@ -544,7 +730,6 @@ def generate_click(
                             scheduler=scheduler,
                             text_encoder=cpuclip,
                             vae_decoder=cpuvae,
-                            vae_encoder=None,
                         )
                     else:
                         pipe = OnnxStableDiffusionInpaintPipeline.from_pretrained(
@@ -566,7 +751,6 @@ def generate_click(
                             provider=provider,
                             scheduler=scheduler,
                             vae_decoder=cpuvae,
-                            vae_encoder=None,
                         )
                     else:
                         pipe = OnnxStableDiffusionInpaintPipeline.from_pretrained(
@@ -610,7 +794,11 @@ def generate_click(
             0,
             seed_t0,
             fmt_t0,
-            None,
+            legacy_t2,
+            video_t0,
+            fps_t0,
+            firststep_t0,
+            laststep_t0,
         )
     elif current_tab == 1:
         # input image resizing
@@ -660,7 +848,11 @@ def generate_click(
             denoise_t1,
             seed_t1,
             fmt_t1,
-            None,
+            legacy_t2,
+            video_t1,
+            fps_t1,
+            firststep_t1,
+            laststep_t1,
         )
     elif current_tab == 2:
         input_image = image_t2["image"].convert("RGB")
@@ -701,6 +893,10 @@ def generate_click(
             seed_t2,
             fmt_t2,
             legacy_t2,
+            video_t2,
+            fps_t2,
+            firststep_t2,
+            laststep_t2,
         )
 
     if release_memory:
@@ -730,6 +926,20 @@ def choose_sch(sched_name: str):
         return gr.update(interactive=True)
     else:
         return gr.update(interactive=False)
+
+
+def make_video1(video: bool):
+    if video is True:
+        return gr.update(interactive=True)
+    else:
+        return gr.update(interactive=False)
+
+
+def make_video2(video: bool):
+    if video is True:
+        return gr.update(interactive=False)
+    else:
+        return gr.update(interactive=True)
 
 
 if __name__ == "__main__":
@@ -802,7 +1012,12 @@ if __name__ == "__main__":
         for entry in scan_it:
             if entry.is_dir():
                 model_list.append(entry.name)
-    default_model = model_list[0] if len(model_list) > 0 else None
+
+    if "dreamlike-photoreal-2.0_ft_mse_onnx-fp16" in model_list:
+        default_model = "dreamlike-photoreal-2.0_ft_mse_onnx-fp16"
+
+    else:
+        default_model = model_list[0] if len(model_list) > 0 else None
 
     if is_v_0_8:
         from diffusers import (
@@ -843,7 +1058,7 @@ if __name__ == "__main__":
                     neg_prompt_t0 = gr.Textbox(
                         value="",
                         lines=2,
-                        label="negative prompt ",
+                        label="negative prompt",
                     )
                     sch_t0 = gr.Radio(sched_list, value="DPMS", label="scheduler")
                     with gr.Row():
@@ -865,12 +1080,39 @@ if __name__ == "__main__":
                     )
                     seed_t0 = gr.Textbox(value="", max_lines=1, label="seed")
                     fmt_t0 = gr.Radio(["png", "jpg"], value="png", label="image format")
+                    with gr.Row():
+                        video_t0 = gr.Checkbox(value=False, label="create video")
+                    fps_t0 = gr.Slider(
+                        1,
+                        120,
+                        value=7.5,
+                        step=0.01,
+                        label="framerate",
+                        interactive=False,
+                    )
+                    with gr.Row():
+                        firststep_t0 = gr.Slider(
+                            1,
+                            120,
+                            value=1,
+                            step=1,
+                            label="first step count",
+                            interactive=False,
+                        )
+                        laststep_t0 = gr.Slider(
+                            1,
+                            120,
+                            value=15,
+                            step=1,
+                            label="last step count",
+                            interactive=False,
+                        )
                 with gr.Tab(label="img2img") as tab1:
                     prompt_t1 = gr.Textbox(value="", lines=2, label="prompt")
                     neg_prompt_t1 = gr.Textbox(
                         value="",
                         lines=2,
-                        label="negative prompt ",
+                        label="negative prompt",
                     )
                     sch_t1 = gr.Radio(sched_list, value="DPMS", label="scheduler")
                     image_t1 = gr.Image(
@@ -898,12 +1140,39 @@ if __name__ == "__main__":
                     )
                     seed_t1 = gr.Textbox(value="", max_lines=1, label="seed")
                     fmt_t1 = gr.Radio(["png", "jpg"], value="png", label="image format")
+                    with gr.Row():
+                        video_t1 = gr.Checkbox(value=False, label="create video")
+                    fps_t1 = gr.Slider(
+                        1,
+                        120,
+                        value=7.5,
+                        step=0.01,
+                        label="framerate",
+                        interactive=False,
+                    )
+                    with gr.Row():
+                        firststep_t1 = gr.Slider(
+                            1,
+                            120,
+                            value=1,
+                            step=1,
+                            label="first step count",
+                            interactive=False,
+                        )
+                        laststep_t1 = gr.Slider(
+                            1,
+                            120,
+                            value=15,
+                            step=1,
+                            label="last step count",
+                            interactive=False,
+                        )
                 with gr.Tab(label="inpainting") as tab2:
                     prompt_t2 = gr.Textbox(value="", lines=2, label="prompt")
                     neg_prompt_t2 = gr.Textbox(
                         value="",
                         lines=2,
-                        label="negative prompt ",
+                        label="negative prompt",
                     )
                     sch_t2 = gr.Radio(sched_list, value="DPMS", label="scheduler")
                     legacy_t2 = gr.Checkbox(value=False, label="legacy inpaint")
@@ -933,6 +1202,33 @@ if __name__ == "__main__":
                     )
                     seed_t2 = gr.Textbox(value="", max_lines=1, label="seed")
                     fmt_t2 = gr.Radio(["png", "jpg"], value="png", label="image format")
+                    with gr.Row():
+                        video_t2 = gr.Checkbox(value=False, label="create video")
+                    fps_t2 = gr.Slider(
+                        1,
+                        120,
+                        value=7.5,
+                        step=0.01,
+                        label="framerate",
+                        interactive=False,
+                    )
+                    with gr.Row():
+                        firststep_t2 = gr.Slider(
+                            1,
+                            120,
+                            value=1,
+                            step=1,
+                            label="first step count",
+                            interactive=False,
+                        )
+                        laststep_t2 = gr.Slider(
+                            1,
+                            120,
+                            value=15,
+                            step=1,
+                            label="last step count",
+                            interactive=False,
+                        )
             with gr.Column(scale=11, min_width=550):
                 image_out = gr.Gallery(value=None, label="output images")
                 status_out = gr.Textbox(value="", label="status")
@@ -951,6 +1247,10 @@ if __name__ == "__main__":
             eta_t0,
             seed_t0,
             fmt_t0,
+            video_t0,
+            fps_t0,
+            firststep_t0,
+            laststep_t0,
         ]
         tab1_inputs = [
             prompt_t1,
@@ -967,6 +1267,10 @@ if __name__ == "__main__":
             denoise_t1,
             seed_t1,
             fmt_t1,
+            video_t1,
+            fps_t1,
+            firststep_t1,
+            laststep_t1,
         ]
         tab2_inputs = [
             prompt_t2,
@@ -983,6 +1287,10 @@ if __name__ == "__main__":
             eta_t2,
             seed_t2,
             fmt_t2,
+            video_t2,
+            fps_t2,
+            firststep_t2,
+            laststep_t2,
         ]
         all_inputs = [model_drop]
         all_inputs.extend(tab0_inputs)
@@ -1003,6 +1311,58 @@ if __name__ == "__main__":
         sch_t0.change(fn=choose_sch, inputs=sch_t0, outputs=eta_t0, queue=False)
         sch_t1.change(fn=choose_sch, inputs=sch_t1, outputs=eta_t1, queue=False)
         sch_t2.change(fn=choose_sch, inputs=sch_t2, outputs=eta_t2, queue=False)
+
+        # didn't know how to condense these
+        video_t0.change(fn=make_video1, inputs=video_t0, outputs=fps_t0, queue=False)
+        video_t0.change(
+            fn=make_video1, inputs=video_t0, outputs=firststep_t0, queue=False
+        )
+        video_t0.change(
+            fn=make_video1, inputs=video_t0, outputs=laststep_t0, queue=False
+        )
+        video_t0.change(
+            fn=make_video2, inputs=video_t0, outputs=steps_t0, queue=False
+        )
+        video_t0.change(
+            fn=make_video2, inputs=video_t0, outputs=iter_t0, queue=False
+        )
+        video_t0.change(
+            fn=make_video2, inputs=video_t0, outputs=batch_t0, queue=False
+        )
+
+        video_t1.change(fn=make_video1, inputs=video_t1, outputs=fps_t1, queue=False)
+        video_t1.change(
+            fn=make_video1, inputs=video_t1, outputs=firststep_t1, queue=False
+        )
+        video_t1.change(
+            fn=make_video1, inputs=video_t1, outputs=laststep_t1, queue=False
+        )
+        video_t1.change(
+            fn=make_video2, inputs=video_t1, outputs=steps_t1, queue=False
+        )
+        video_t1.change(
+            fn=make_video2, inputs=video_t1, outputs=iter_t1, queue=False
+        )
+        video_t1.change(
+            fn=make_video2, inputs=video_t1, outputs=batch_t1, queue=False
+        )
+
+        video_t2.change(fn=make_video1, inputs=video_t2, outputs=fps_t2, queue=False)
+        video_t2.change(
+            fn=make_video1, inputs=video_t2, outputs=firststep_t2, queue=False
+        )
+        video_t2.change(
+            fn=make_video1, inputs=video_t2, outputs=laststep_t2, queue=False
+        )
+        video_t2.change(
+            fn=make_video2, inputs=video_t2, outputs=steps_t2, queue=False
+        )
+        video_t2.change(
+            fn=make_video2, inputs=video_t2, outputs=iter_t2, queue=False
+        )
+        video_t2.change(
+            fn=make_video2, inputs=video_t2, outputs=batch_t2, queue=False
+        )
 
         image_out.style(grid=2)
         image_t1.style(height=402)
