@@ -14,6 +14,9 @@ A lot of this document is based on other guides. I've listed them below:
 - https://gist.github.com/harishanand95/75f4515e6187a6aa3261af6ac6f61269#file-stable_diffusion-md
 - https://rentry.org/ayymd-stable-diffustion-v1_4-guide
 - https://gist.github.com/averad/256c507baa3dcc9464203dc14610d674
+- [Amblyopius](https://github.com/Amblyopius/) (optional cpu on vae and/or clip & lots of general SD help)
+- de_inferno#6407 on discord (legacy inpainting fix)
+- AUOCastoff#0995 on discord (inpainting resoltion fix)
 
 ## Prerequisites
 
@@ -139,3 +142,9 @@ Then run the following:
 `.\setup.bat -update`
 
 NOTE: if you're updating from diffusers v0.5.1 and below, you will need to re-convert your models.
+
+## Legacy Inpainting Fix
+- If legacy inpainting does not work for you, please follow these steps from de_inferno#6407 on discord to fix it.
+    - Within: `virtualenv\lib\site-packages\diffusers\pipelines\stable_diffusion\pipeline_onnx_stable_diffusion_inpaint_legacy.py`
+    - Find (likely on line 402): `sample=latent_model_input, timestep=np.array([t]), encoder_hidden_states=text_embeddings`
+    - Replace with: `sample=latent_model_input, timestep=np.array([t], dtype="float32"), encoder_hidden_states=text_embeddings`
