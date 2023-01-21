@@ -1,4 +1,4 @@
-# If legacy inpainting does not work for you, please follow these steps from de_inferno#6407 on discord to fix it.
+# If inpainting does not work for you, please follow these steps from de_inferno#6407 on discord to fix it.
 #
 # Within: virtualenv\lib\site-packages\diffusers\pipelines\stable_diffusion\pipeline_onnx_stable_diffusion_inpaint_legacy.py
 #
