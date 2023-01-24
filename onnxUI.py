@@ -4,22 +4,24 @@ import gc
 import os
 import re
 import time
-import gradio as gr
-import numpy as np
-import PIL
-import lpw_pipe
-from math import ceil
 from typing import Optional, Tuple
-from packaging import version
-from diffusers import __version__ as _df_version
+from math import ceil
+
 from diffusers import (
-    OnnxStableDiffusionPipeline,
     OnnxRuntimeModel,
+    OnnxStableDiffusionPipeline,
     OnnxStableDiffusionImg2ImgPipeline,
     DDIMScheduler,
     PNDMScheduler,
     LMSDiscreteScheduler,
 )
+from diffusers import __version__ as _df_version
+import gradio as gr
+import numpy as np
+from packaging import version
+import PIL
+
+import lpw_pipe
 
 
 # gradio function
@@ -455,12 +457,12 @@ def run_diffusers(
 
     if video is True:
         os.system(
-            f'ffmpeg -f image2 -r {fps} '
-            f'-start_number {ffmpeg_start} '
+            f"ffmpeg -f image2 -r {fps} "
+            f"-start_number {ffmpeg_start} "
             f'-i "{frames_path}/%06d-00.{short_prompt}_{seed}.{image_format}" '
-            f'-vcodec libx264 '
-            f'-crf 17 '
-            f'-preset veryslow{reversed_or_not} '
+            f"-vcodec libx264 "
+            f"-crf 17 "
+            f"-preset veryslow{reversed_or_not} "
             f'"videooutput/{short_prompt}_{seed}_{firststep}-{laststep}_'
             f'{fps}fps.mp4"'
         )
@@ -675,42 +677,46 @@ def generate_click(
                 print("Using CPU Text Encoder")
                 print("Using CPU VAE Decoder")
                 cputextenc = OnnxRuntimeModel.from_pretrained(
-                    model_path + "/text_encoder")
+                    model_path + "/text_encoder"
+                )
                 cpuvaedec = OnnxRuntimeModel.from_pretrained(
-                    model_path + "/vae_decoder")
+                    model_path + "/vae_decoder"
+                )
                 pipe = OnnxStableDiffusionPipeline.from_pretrained(
                     model_path,
                     provider=provider,
                     scheduler=scheduler,
                     text_encoder=cputextenc,
                     vae_decoder=cpuvaedec,
-                    vae_encoder=None
+                    vae_encoder=None,
                 )
             elif textenc_on_cpu:
                 print("Using CPU Text Encoder")
                 cputextenc = OnnxRuntimeModel.from_pretrained(
-                    model_path + "/text_encoder")
+                    model_path + "/text_encoder"
+                )
                 pipe = OnnxStableDiffusionPipeline.from_pretrained(
                     model_path,
                     provider=provider,
                     scheduler=scheduler,
-                    text_encoder=cputextenc)
+                    text_encoder=cputextenc,
+                )
             elif vaedec_on_cpu:
                 print("Using CPU VAE Decoder")
                 cpuvaedec = OnnxRuntimeModel.from_pretrained(
-                    model_path + "/vae_decoder")
+                    model_path + "/vae_decoder"
+                )
                 pipe = OnnxStableDiffusionPipeline.from_pretrained(
                     model_path,
                     provider=provider,
                     scheduler=scheduler,
                     vae_decoder=cpuvaedec,
-                    vae_encoder=None
+                    vae_encoder=None,
                 )
             else:
                 pipe = OnnxStableDiffusionPipeline.from_pretrained(
-                    model_path,
-                    provider=provider,
-                    scheduler=scheduler)
+                    model_path, provider=provider, scheduler=scheduler
+                )
         current_pipe = "txt2img"
     elif current_tab == 1:
         if current_pipe != "img2img" or pipe is None:
@@ -718,115 +724,137 @@ def generate_click(
                 print("Using CPU Text Encoder")
                 print("Using CPU VAE Decoder")
                 cputextenc = OnnxRuntimeModel.from_pretrained(
-                    model_path + "/text_encoder")
+                    model_path + "/text_encoder"
+                )
                 cpuvaedec = OnnxRuntimeModel.from_pretrained(
-                    model_path + "/vae_decoder")
+                    model_path + "/vae_decoder"
+                )
                 pipe = OnnxStableDiffusionImg2ImgPipeline.from_pretrained(
                     model_path,
                     provider=provider,
                     scheduler=scheduler,
                     text_encoder=cputextenc,
-                    vae_decoder=cpuvaedec)
+                    vae_decoder=cpuvaedec,
+                )
             elif textenc_on_cpu:
                 print("Using CPU Text Encoder")
                 cputextenc = OnnxRuntimeModel.from_pretrained(
-                    model_path + "/text_encoder")
+                    model_path + "/text_encoder"
+                )
                 pipe = OnnxStableDiffusionImg2ImgPipeline.from_pretrained(
                     model_path,
                     provider=provider,
                     scheduler=scheduler,
-                    text_encoder=cputextenc)
+                    text_encoder=cputextenc,
+                )
             elif vaedec_on_cpu:
                 print("Using CPU VAE Decoder")
                 cpuvaedec = OnnxRuntimeModel.from_pretrained(
-                    model_path + "/vae_decoder")
+                    model_path + "/vae_decoder"
+                )
                 pipe = OnnxStableDiffusionImg2ImgPipeline.from_pretrained(
                     model_path,
                     provider=provider,
                     scheduler=scheduler,
-                    vae_decoder=cpuvaedec)
+                    vae_decoder=cpuvaedec,
+                )
             else:
                 pipe = OnnxStableDiffusionImg2ImgPipeline.from_pretrained(
-                    model_path,
-                    provider=provider,
-                    scheduler=scheduler)
+                    model_path, provider=provider, scheduler=scheduler
+                )
         current_pipe = "img2img"
     elif current_tab == 2:
-        if current_pipe != "inpaint" or pipe is None or current_legacy != legacy_t2:
+        if (
+            current_pipe != "inpaint"
+            or pipe is None
+            or current_legacy != legacy_t2
+        ):
             if legacy_t2:
                 if textenc_on_cpu and vaedec_on_cpu:
                     print("Using CPU Text Encoder")
                     print("Using CPU VAE Decoder")
                     cputextenc = OnnxRuntimeModel.from_pretrained(
-                        model_path + "/text_encoder")
+                        model_path + "/text_encoder"
+                    )
                     cpuvaedec = OnnxRuntimeModel.from_pretrained(
-                        model_path + "/vae_decoder")
+                        model_path + "/vae_decoder"
+                    )
                     pipe = OnnxStableDiffusionInpaintPipelineLegacy.from_pretrained(
                         model_path,
                         provider=provider,
                         scheduler=scheduler,
                         text_encoder=cputextenc,
-                        vae_decoder=cpuvaedec)
+                        vae_decoder=cpuvaedec,
+                    )
                 elif textenc_on_cpu:
                     print("Using CPU Text Encoder")
                     cputextenc = OnnxRuntimeModel.from_pretrained(
-                        model_path + "/text_encoder")
+                        model_path + "/text_encoder"
+                    )
                     pipe = OnnxStableDiffusionInpaintPipelineLegacy.from_pretrained(
                         model_path,
                         provider=provider,
                         scheduler=scheduler,
-                        text_encoder=cputextenc)
+                        text_encoder=cputextenc,
+                    )
                 elif vaedec_on_cpu:
                     print("Using CPU VAE Decoder")
                     cpuvaedec = OnnxRuntimeModel.from_pretrained(
-                        model_path + "/vae_decoder")
+                        model_path + "/vae_decoder"
+                    )
                     pipe = OnnxStableDiffusionInpaintPipelineLegacy.from_pretrained(
                         model_path,
                         provider=provider,
                         scheduler=scheduler,
-                        vae_decoder=cpuvaedec)
+                        vae_decoder=cpuvaedec,
+                    )
                 else:
                     pipe = OnnxStableDiffusionInpaintPipelineLegacy.from_pretrained(
-                        model_path,
-                        provider=provider,
-                        scheduler=scheduler)
+                        model_path, provider=provider, scheduler=scheduler
+                    )
             else:
                 if textenc_on_cpu and vaedec_on_cpu:
                     print("Using CPU Text Encoder")
                     print("Using CPU VAE Decoder")
                     cputextenc = OnnxRuntimeModel.from_pretrained(
-                        model_path + "/text_encoder")
+                        model_path + "/text_encoder"
+                    )
                     cpuvaedec = OnnxRuntimeModel.from_pretrained(
-                        model_path + "/vae_decoder")
+                        model_path + "/vae_decoder"
+                    )
                     pipe = OnnxStableDiffusionInpaintPipeline.from_pretrained(
                         model_path,
                         provider=provider,
                         scheduler=scheduler,
                         text_encoder=cputextenc,
-                        vae_decoder=cpuvaedec)
+                        vae_decoder=cpuvaedec,
+                    )
                 elif textenc_on_cpu:
                     print("Using CPU Text Encoder")
                     cputextenc = OnnxRuntimeModel.from_pretrained(
-                        model_path + "/text_encoder")
+                        model_path + "/text_encoder"
+                    )
                     pipe = OnnxStableDiffusionInpaintPipeline.from_pretrained(
                         model_path,
                         provider=provider,
                         scheduler=scheduler,
-                        text_encoder=cputextenc)
+                        text_encoder=cputextenc,
+                    )
                 elif vaedec_on_cpu:
                     print("Using CPU VAE Decoder")
                     cpuvaedec = OnnxRuntimeModel.from_pretrained(
-                        model_path + "/vae_decoder")
+                        model_path + "/vae_decoder"
+                    )
                     pipe = OnnxStableDiffusionInpaintPipeline.from_pretrained(
                         model_path,
                         provider=provider,
                         scheduler=scheduler,
-                        vae_decoder=cpuvaedec)
+                        vae_decoder=cpuvaedec,
+                    )
                 else:
                     pipe = OnnxStableDiffusionInpaintPipeline.from_pretrained(
-                        model_path,
-                        provider=provider,
-                        scheduler=scheduler)
+                        model_path, provider=provider, scheduler=scheduler
+                    )
         current_pipe = "inpaint"
         current_legacy = legacy_t2
 
@@ -1035,11 +1063,15 @@ if __name__ == "__main__":
         help="de-allocate the pipeline and release memory after generation",
     )
     parser.add_argument(
-        "--cpu-textenc", action="store_true",
-        help="Run Text Encoder on CPU, saves VRAM by running Text Encoder on CPU")
+        "--cpu-textenc",
+        action="store_true",
+        help="Run Text Encoder on CPU, saves VRAM by running Text Encoder on CPU",
+    )
     parser.add_argument(
-        "--cpu-vaedec", action="store_true",
-        help="Run VAE Decoder on CPU, saves VRAM by running VAE Decoder on CPU")
+        "--cpu-vaedec",
+        action="store_true",
+        help="Run VAE Decoder on CPU, saves VRAM by running VAE Decoder on CPU",
+    )
     args = parser.parse_args()
 
     # variables for ONNX pipelines
