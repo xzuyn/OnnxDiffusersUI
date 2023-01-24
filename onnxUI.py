@@ -4,9 +4,14 @@ import gc
 import os
 import re
 import time
-from typing import Optional, Tuple
+import gradio as gr
+import numpy as np
+import PIL
+import lpw_pipe
 from math import ceil
-
+from typing import Optional, Tuple
+from packaging import version
+from diffusers import __version__ as _df_version
 from diffusers import (
     OnnxStableDiffusionPipeline,
     OnnxRuntimeModel,
@@ -15,13 +20,6 @@ from diffusers import (
     PNDMScheduler,
     LMSDiscreteScheduler,
 )
-from diffusers import __version__ as _df_version
-import gradio as gr
-import numpy as np
-from packaging import version
-import PIL
-
-import lpw_pipe
 
 
 # gradio function
