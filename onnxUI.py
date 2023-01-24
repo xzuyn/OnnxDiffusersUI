@@ -1147,11 +1147,7 @@ if __name__ == "__main__":
             if entry.is_dir():
                 model_list.append(entry.name)
 
-    if "dreamlike-photoreal-2.0_ft_mse_onnx-fp16" in model_list:
-        default_model = "dreamlike-photoreal-2.0_ft_mse_onnx-fp16"
-
-    else:
-        default_model = model_list[0] if len(model_list) > 0 else None
+    default_model = model_list[0] if len(model_list) > 0 else None
 
     if is_v_0_8:
         from diffusers import (
