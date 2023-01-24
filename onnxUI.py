@@ -215,15 +215,15 @@ def run_diffusers(
             time_taken = time_taken + (finish - start)
     else:
         if firststep > laststep:
-            stepdirection = -1
-            ffmpegstart = laststep
-            reverse = " -vf reverse"
+            step_direction = -1
+            ffmpeg_start = laststep
+            reversed_or_not = " -vf reverse"
         else:
-            stepdirection = 1
-            ffmpegstart = firststep
-            reverse = ""
+            step_direction = 1
+            ffmpeg_start = firststep
+            reversed_or_not = ""
         for step in range(
-            firststep, (laststep + stepdirection), stepdirection
+            firststep, (laststep + step_direction), step_direction
         ):
             print(f"step {step}/{laststep} for video frames")
 
@@ -458,11 +458,11 @@ def run_diffusers(
     if video is True:
         os.system(
             f'ffmpeg -f image2 -r {fps} '
-            f'-start_number {ffmpegstart} '
+            f'-start_number {ffmpeg_start} '
             f'-i "{frames_path}/%06d-00.{short_prompt}_{seed}.{image_format}" '
             f'-vcodec libx264 '
             f'-crf 17 '
-            f'-preset veryslow{reverse} '
+            f'-preset veryslow{reversed_or_not} '
             f'"videooutput/{short_prompt}_{seed}_{firststep}-{laststep}_'
             f'{fps}fps.mp4"'
         )
