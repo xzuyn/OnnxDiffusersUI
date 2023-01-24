@@ -89,6 +89,20 @@ def run_diffusers(
         next_index = 0
 
     sched_name = pipe.scheduler.__class__.__name__
+    if sched_name == "DPMSolverMultistepScheduler":
+        sched_short_name = "DPMS"
+    elif sched_name == "EulerAncestralDiscreteScheduler":
+        sched_short_name = "EulerA"
+    elif sched_name == "EulerDiscreteScheduler":
+        sched_short_name = "Euler"
+    elif sched_name == "DDPMScheduler":
+        sched_short_name = "DDPM"
+    elif sched_name == "DDIMScheduler":
+        sched_short_name = "DDIM"
+    elif sched_name == "LMSDiscreteScheduler":
+        sched_name = "LMS"
+    elif sched_name == "PNDMScheduler":
+        sched_short_name = "PNDM"
     neg_prompt = None if neg_prompt == "" else neg_prompt
     images = []
     time_taken = 0
@@ -197,7 +211,8 @@ def run_diffusers(
                             f"{seeds[i]}_"
                             f"{guidance_scale}_"
                             f"{width}x"
-                            f"{height}."
+                            f"{height}_"
+                            f"{sched_short_name}."
                             f"{image_format}",
                         ),
                         optimize=True,
@@ -213,7 +228,9 @@ def run_diffusers(
                             f"{short_prompt}_"
                             f"{seeds[i]}_"
                             f"{guidance_scale}_"
-                            f"{width}x{height}."
+                            f"{width}x"
+                            f"{height}_"
+                            f"{sched_short_name}."
                             f"{image_format}",
                         ),
                         quality=95,
@@ -252,6 +269,7 @@ def run_diffusers(
                 f"{height}_"
                 f"{firststep}-"
                 f"{laststep}_"
+                f"{sched_short_name}_"
                 f"{fps}fps"
             )
             os.makedirs(frames_path, exist_ok=True)
@@ -406,7 +424,8 @@ def run_diffusers(
                             f"{seed}_"
                             f"{guidance_scale}_"
                             f"{width}x"
-                            f"{height}."
+                            f"{height}_"
+                            f"{sched_short_name}."
                             f"{image_format}",
                         ),
                         optimize=True,
@@ -423,7 +442,8 @@ def run_diffusers(
                             f"{seed}_"
                             f"{guidance_scale}_"
                             f"{width}x"
-                            f"{height}."
+                            f"{height}_"
+                            f"{sched_short_name}."
                             f"{image_format}",
                         ),
                         quality=95,
@@ -466,6 +486,7 @@ def run_diffusers(
         f"{height}_"
         f"{firststep}-"
         f"{laststep}_"
+        f"{sched_short_name}_"
         f"{fps}fps"
     )
 
@@ -483,7 +504,8 @@ def run_diffusers(
             f"{seed}_"
             f"{guidance_scale}_"
             f"{width}x"
-            f"{height}."
+            f"{height}_"
+            f"{sched_short_name}."
             f'{image_format}" '
             f"-vcodec libx264 "
             f"-crf 17 "
@@ -495,6 +517,7 @@ def run_diffusers(
             f"{guidance_scale}_"
             f"{firststep}-"
             f"{laststep}_"
+            f"{sched_short_name}_"
             f'{fps}fps.mp4"'
         )
 
