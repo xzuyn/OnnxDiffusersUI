@@ -191,8 +191,12 @@ def run_diffusers(
                     batch_images[j].save(
                         os.path.join(
                             output_path,
-                            f"{next_index + i:06}-{j:02}.{short_prompt}_"
-                            f"{seeds[i]}.{image_format}",
+                            f"{next_index + i:06}-"
+                            f"{j:02}."
+                            f"{short_prompt}_"
+                            f"{seeds[i]}_"
+                            f"{guidance_scale}."
+                            f"{image_format}",
                         ),
                         optimize=True,
                     )
@@ -202,8 +206,12 @@ def run_diffusers(
                     batch_images[j].save(
                         os.path.join(
                             output_path,
-                            f"{next_index + i:06}-{j:02}.{short_prompt}_"
-                            f"{seeds[i]}.{image_format}",
+                            f"{next_index + i:06}-"
+                            f"{j:02}."
+                            f"{short_prompt}_"
+                            f"{seeds[i]}_"
+                            f"{guidance_scale}."
+                            f"{image_format}",
                         ),
                         quality=95,
                         subsampling=0,
@@ -234,7 +242,13 @@ def run_diffusers(
             )
             frames_path = (
                 output_path
-                + f"/videoframes/{short_prompt}_{seed}_{firststep}-{laststep}_{fps}fps"
+                + f"/videoframes/"
+                  f"{short_prompt}_"
+                  f"{seed}_"
+                  f"{guidance_scale}_"
+                  f"{firststep}-"
+                  f"{laststep}_"
+                  f"{fps}fps"
             )
             os.makedirs(frames_path, exist_ok=True)
 
@@ -382,8 +396,12 @@ def run_diffusers(
                     batch_images[j].save(
                         os.path.join(
                             frames_path,
-                            f"{next_index + step:06}-{j:02}."
-                            f"{short_prompt}_{seed}.{image_format}",
+                            f"{next_index + step:06}-"
+                            f"{j:02}."
+                            f"{short_prompt}_"
+                            f"{seed}_"
+                            f"{guidance_scale}."
+                            f"{image_format}",
                         ),
                         optimize=True,
                     )
@@ -393,8 +411,12 @@ def run_diffusers(
                     batch_images[j].save(
                         os.path.join(
                             frames_path,
-                            f"{next_index + step:06}-{j:02}."
-                            f"{short_prompt}_{seed}.{image_format}",
+                            f"{next_index + step:06}-"
+                            f"{j:02}."
+                            f"{short_prompt}_"
+                            f"{seed}_"
+                            f"{guidance_scale}."
+                            f"{image_format}",
                         ),
                         quality=95,
                         subsampling=0,
@@ -428,19 +450,40 @@ def run_diffusers(
         short_prompt[:64] if len(short_prompt) > 32 else short_prompt
     )
     frames_path = (
-        output_path
-        + f"/videoframes/{short_prompt}_{seed}_{firststep}-{laststep}_{fps}fps"
+            output_path
+            + f"/videoframes/"
+              f"{short_prompt}_"
+              f"{seed}_"
+              f"{guidance_scale}_"
+              f"{firststep}-"
+              f"{laststep}_"
+              f"{fps}fps"
     )
 
     if video is True:
         os.system(
-            f"ffmpeg -f image2 -r {fps} "
-            f"-start_number {ffmpeg_start} "
-            f'-i "{frames_path}/%06d-00.{short_prompt}_{seed}.{image_format}" '
+            f"ffmpeg "
+            f"-f image2 "
+            f"-r "
+            f"{fps} "
+            f"-start_number "
+            f"{ffmpeg_start} "
+            f'-i '
+            f'{frames_path}/%06d-00."'
+            f'{short_prompt}_'
+            f'{seed}_'
+            f'{guidance_scale}.'
+            f'{image_format}" '
             f"-vcodec libx264 "
             f"-crf 17 "
-            f"-preset veryslow{reversed_or_not} "
-            f'"videooutput/{short_prompt}_{seed}_{firststep}-{laststep}_'
+            f"-preset veryslow"
+            f"{reversed_or_not} "
+            f'"videooutput/'
+            f'{short_prompt}_'
+            f'{seed}_'
+            f'{guidance_scale}_'
+            f'{firststep}-'
+            f'{laststep}_'
             f'{fps}fps.mp4"'
         )
 
