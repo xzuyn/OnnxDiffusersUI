@@ -379,51 +379,28 @@ def run_diffusers(
             # png output
             if image_format == "png":
                 for j in range(batch_size):
-                    if firststep > laststep:
-                        batch_images[j].save(
-                            os.path.join(
-                                frames_path,
-                                f"{next_index + step:06}-{j:02}."
-                                f"{short_prompt}_{seed}.{image_format}",
-                            ),
-                            optimize=True,
-                        )
-                    else:
-                        batch_images[j].save(
-                            os.path.join(
-                                frames_path,
-                                f"{next_index + step:06}-{j:02}."
-                                f"{short_prompt}_{seed}.{image_format}",
-                            ),
-                            optimize=True,
-                        )
+                    batch_images[j].save(
+                        os.path.join(
+                            frames_path,
+                            f"{next_index + step:06}-{j:02}."
+                            f"{short_prompt}_{seed}.{image_format}",
+                        ),
+                        optimize=True,
+                    )
             # jpg output
             elif image_format == "jpg":
                 for j in range(batch_size):
-                    if firststep > laststep:
-                        batch_images[j].save(
-                            os.path.join(
-                                frames_path,
-                                f"{next_index + step:06}-{j:02}."
-                                f"{short_prompt}_{seed}.{image_format}",
-                            ),
-                            quality=95,
-                            subsampling=0,
-                            optimize=True,
-                            progressive=True,
-                        )
-                    else:
-                        batch_images[j].save(
-                            os.path.join(
-                                frames_path,
-                                f"{next_index + step:06}-{j:02}."
-                                f"{short_prompt}_{seed}.{image_format}",
-                            ),
-                            quality=95,
-                            subsampling=0,
-                            optimize=True,
-                            progressive=True,
-                        )
+                    batch_images[j].save(
+                        os.path.join(
+                            frames_path,
+                            f"{next_index + step:06}-{j:02}."
+                            f"{short_prompt}_{seed}.{image_format}",
+                        ),
+                        quality=95,
+                        subsampling=0,
+                        optimize=True,
+                        progressive=True,
+                    )
 
             images.extend(batch_images)
             time_taken = time_taken + (finish - start)
