@@ -502,9 +502,9 @@ def clear_click():
             seed_t0: "",
             fmt_t0: "png",
             video_t0: False,
-            fps_t0: 7.5,
+            fps_t0: 5,
             firststep_t0: 1,
-            laststep_t0: 15,
+            laststep_t0: 30,
         }
     elif current_tab == 1:
         return {
@@ -523,9 +523,9 @@ def clear_click():
             seed_t1: "",
             fmt_t1: "png",
             video_t1: False,
-            fps_t1: 7.5,
+            fps_t1: 5,
             firststep_t1: 1,
-            laststep_t1: 15,
+            laststep_t1: 30,
         }
     elif current_tab == 2:
         return {
@@ -544,9 +544,9 @@ def clear_click():
             seed_t2: "",
             fmt_t2: "png",
             video_t2: False,
-            fps_t2: 7.5,
+            fps_t2: 5,
             firststep_t2: 1,
-            laststep_t2: 15,
+            laststep_t2: 30,
         }
 
 
@@ -1176,7 +1176,7 @@ if __name__ == "__main__":
                     fps_t0 = gr.Slider(
                         1,
                         120,
-                        value=7.5,
+                        value=5,
                         step=0.01,
                         label="framerate",
                         interactive=False,
@@ -1193,7 +1193,7 @@ if __name__ == "__main__":
                         laststep_t0 = gr.Slider(
                             1,
                             300,
-                            value=15,
+                            value=30,
                             step=1,
                             label="last step",
                             interactive=False,
@@ -1252,7 +1252,7 @@ if __name__ == "__main__":
                     fps_t1 = gr.Slider(
                         1,
                         120,
-                        value=7.5,
+                        value=5,
                         step=0.01,
                         label="framerate",
                         interactive=False,
@@ -1269,7 +1269,7 @@ if __name__ == "__main__":
                         laststep_t1 = gr.Slider(
                             1,
                             300,
-                            value=15,
+                            value=30,
                             step=1,
                             label="last step",
                             interactive=False,
@@ -1330,7 +1330,7 @@ if __name__ == "__main__":
                     fps_t2 = gr.Slider(
                         1,
                         120,
-                        value=7.5,
+                        value=5,
                         step=0.01,
                         label="framerate",
                         interactive=False,
@@ -1347,7 +1347,7 @@ if __name__ == "__main__":
                         laststep_t2 = gr.Slider(
                             1,
                             300,
-                            value=15,
+                            value=30,
                             step=1,
                             label="last step",
                             interactive=False,
