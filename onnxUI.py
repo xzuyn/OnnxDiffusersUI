@@ -108,8 +108,8 @@ def run_diffusers(
                 f"batch size: {batch_size} "
                 f"steps: {steps} "
                 f"scale: {guidance_scale} "
-                f"height: {height} "
                 f"width: {width} "
+                f"height: {height} "
                 f"eta: {eta} "
                 f"seed: {seeds[i]}"
             )
@@ -195,7 +195,9 @@ def run_diffusers(
                             f"{j:02}."
                             f"{short_prompt}_"
                             f"{seeds[i]}_"
-                            f"{guidance_scale}."
+                            f"{guidance_scale}_"
+                            f"{width}x"
+                            f"{height}."
                             f"{image_format}",
                         ),
                         optimize=True,
@@ -210,7 +212,8 @@ def run_diffusers(
                             f"{j:02}."
                             f"{short_prompt}_"
                             f"{seeds[i]}_"
-                            f"{guidance_scale}."
+                            f"{guidance_scale}_"
+                            f"{width}x{height}."
                             f"{image_format}",
                         ),
                         quality=95,
@@ -246,6 +249,8 @@ def run_diffusers(
                   f"{short_prompt}_"
                   f"{seed}_"
                   f"{guidance_scale}_"
+                  f"{width}x"
+                  f"{height}"
                   f"{firststep}-"
                   f"{laststep}_"
                   f"{fps}fps"
@@ -262,8 +267,8 @@ def run_diffusers(
                 f"batch size: {batch_size} "
                 f"steps: {step} "
                 f"scale: {guidance_scale} "
-                f"height: {height} "
                 f"width: {width} "
+                f"height: {height} "
                 f"eta: {eta} "
                 f"seed: {seed}"
             )
@@ -400,7 +405,9 @@ def run_diffusers(
                             f"{j:02}."
                             f"{short_prompt}_"
                             f"{seed}_"
-                            f"{guidance_scale}."
+                            f"{guidance_scale}_"
+                            f"{width}x"
+                            f"{height}."
                             f"{image_format}",
                         ),
                         optimize=True,
@@ -415,7 +422,9 @@ def run_diffusers(
                             f"{j:02}."
                             f"{short_prompt}_"
                             f"{seed}_"
-                            f"{guidance_scale}."
+                            f"{guidance_scale}_"
+                            f"{width}x"
+                            f"{height}."
                             f"{image_format}",
                         ),
                         quality=95,
@@ -455,6 +464,8 @@ def run_diffusers(
               f"{short_prompt}_"
               f"{seed}_"
               f"{guidance_scale}_"
+              f"{width}x"
+              f"{height}"
               f"{firststep}-"
               f"{laststep}_"
               f"{fps}fps"
@@ -469,10 +480,13 @@ def run_diffusers(
             f"-start_number "
             f"{ffmpeg_start} "
             f'-i '
-            f'{frames_path}/%06d-00."'
+            f'{frames_path}/'
+            f'%06d-00."'
             f'{short_prompt}_'
             f'{seed}_'
-            f'{guidance_scale}.'
+            f'{guidance_scale}_'
+            f'{width}x'
+            f'{height}.'
             f'{image_format}" '
             f"-vcodec libx264 "
             f"-crf 17 "
@@ -1203,11 +1217,11 @@ if __name__ == "__main__":
                     guid_t0 = gr.Slider(
                         0, 50, value=3.5, step=0.1, label="guidance"
                     )
-                    height_t0 = gr.Slider(
-                        384, 960, value=512, step=64, label="height"
-                    )
                     width_t0 = gr.Slider(
                         384, 960, value=512, step=64, label="width"
+                    )
+                    height_t0 = gr.Slider(
+                        384, 960, value=512, step=64, label="height"
                     )
                     eta_t0 = gr.Slider(
                         0,
@@ -1276,11 +1290,11 @@ if __name__ == "__main__":
                     guid_t1 = gr.Slider(
                         0, 50, value=3.5, step=0.1, label="guidance"
                     )
-                    height_t1 = gr.Slider(
-                        384, 960, value=512, step=64, label="height"
-                    )
                     width_t1 = gr.Slider(
                         384, 960, value=512, step=64, label="width"
+                    )
+                    height_t1 = gr.Slider(
+                        384, 960, value=512, step=64, label="height"
                     )
                     denoise_t1 = gr.Slider(
                         0, 1, value=0.8, step=0.01, label="denoise strength"
@@ -1357,11 +1371,11 @@ if __name__ == "__main__":
                     guid_t2 = gr.Slider(
                         0, 50, value=3.5, step=0.1, label="guidance"
                     )
-                    height_t2 = gr.Slider(
-                        384, 960, value=512, step=64, label="height"
-                    )
                     width_t2 = gr.Slider(
                         384, 960, value=512, step=64, label="width"
+                    )
+                    height_t2 = gr.Slider(
+                        384, 960, value=512, step=64, label="height"
                     )
                     eta_t2 = gr.Slider(
                         0,
