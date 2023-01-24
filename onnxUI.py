@@ -244,16 +244,15 @@ def run_diffusers(
                 short_prompt[:64] if len(short_prompt) > 32 else short_prompt
             )
             frames_path = (
-                output_path
-                + f"/videoframes/"
-                  f"{short_prompt}_"
-                  f"{seed}_"
-                  f"{guidance_scale}_"
-                  f"{width}x"
-                  f"{height}"
-                  f"{firststep}-"
-                  f"{laststep}_"
-                  f"{fps}fps"
+                output_path + f"/videoframes/"
+                f"{short_prompt}_"
+                f"{seed}_"
+                f"{guidance_scale}_"
+                f"{width}x"
+                f"{height}_"
+                f"{firststep}-"
+                f"{laststep}_"
+                f"{fps}fps"
             )
             os.makedirs(frames_path, exist_ok=True)
 
@@ -459,16 +458,15 @@ def run_diffusers(
         short_prompt[:64] if len(short_prompt) > 32 else short_prompt
     )
     frames_path = (
-            output_path
-            + f"/videoframes/"
-              f"{short_prompt}_"
-              f"{seed}_"
-              f"{guidance_scale}_"
-              f"{width}x"
-              f"{height}"
-              f"{firststep}-"
-              f"{laststep}_"
-              f"{fps}fps"
+        output_path + f"/videoframes/"
+        f"{short_prompt}_"
+        f"{seed}_"
+        f"{guidance_scale}_"
+        f"{width}x"
+        f"{height}_"
+        f"{firststep}-"
+        f"{laststep}_"
+        f"{fps}fps"
     )
 
     if video is True:
@@ -479,25 +477,24 @@ def run_diffusers(
             f"{fps} "
             f"-start_number "
             f"{ffmpeg_start} "
-            f'-i '
-            f'{frames_path}/'
-            f'%06d-00."'
-            f'{short_prompt}_'
-            f'{seed}_'
-            f'{guidance_scale}_'
-            f'{width}x'
-            f'{height}.'
+            f'-i "'
+            f"{frames_path}/%06d-00."
+            f"{short_prompt}_"
+            f"{seed}_"
+            f"{guidance_scale}_"
+            f"{width}x"
+            f"{height}."
             f'{image_format}" '
             f"-vcodec libx264 "
             f"-crf 17 "
             f"-preset veryslow"
             f"{reversed_or_not} "
             f'"videooutput/'
-            f'{short_prompt}_'
-            f'{seed}_'
-            f'{guidance_scale}_'
-            f'{firststep}-'
-            f'{laststep}_'
+            f"{short_prompt}_"
+            f"{seed}_"
+            f"{guidance_scale}_"
+            f"{firststep}-"
+            f"{laststep}_"
             f'{fps}fps.mp4"'
         )
 
