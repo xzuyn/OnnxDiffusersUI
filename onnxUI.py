@@ -800,9 +800,6 @@ def generate_click(
         scheduler = HeunDiscreteScheduler.from_pretrained(
             model_path, subfolder="scheduler"
         )
-        scheduler = DPMSolverSinglestepScheduler.from_pretrained(
-            model_path, subfolder="scheduler"
-        )
 
     # select which pipeline depending on current tab
     if current_tab == 0:
