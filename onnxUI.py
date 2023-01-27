@@ -90,7 +90,9 @@ def run_diffusers(
 
     sched_name = pipe.scheduler.__class__.__name__
     if sched_name == "DPMSolverMultistepScheduler":
-        sched_short_name = "DPMS"
+        sched_short_name = "DPMSM"
+    elif sched_name == "DPMSolverSinglestepScheduler":
+        sched_short_name = "DPMSS"
     elif sched_name == "EulerAncestralDiscreteScheduler":
         sched_short_name = "EulerA"
     elif sched_name == "EulerDiscreteScheduler":
@@ -100,9 +102,18 @@ def run_diffusers(
     elif sched_name == "DDIMScheduler":
         sched_short_name = "DDIM"
     elif sched_name == "LMSDiscreteScheduler":
-        sched_name = "LMS"
+        sched_short_name = "LMS"
     elif sched_name == "PNDMScheduler":
         sched_short_name = "PNDM"
+    elif sched_name == "KDPM2DiscreteScheduler":
+        sched_short_name = "KDPM2"
+    elif sched_name == "KDPM2AncestralDiscreteScheduler":
+        sched_short_name = "KDPM2A"
+    elif sched_name == "DEISMultistepScheduler":
+        sched_short_name = "DEIS"
+    elif sched_name == "HeunDiscreteScheduler":
+        sched_short_name = "Heun"
+
     neg_prompt = None if neg_prompt == "" else neg_prompt
     images = []
     time_taken = 0
@@ -209,9 +220,10 @@ def run_diffusers(
                             f"{j:02}."
                             f"{short_prompt}_"
                             f"{seeds[i]}_"
-                            f"{guidance_scale}_"
+                            f"{guidance_scale}g_"
                             f"{width}x"
                             f"{height}_"
+                            f"{steps}s_"
                             f"{sched_short_name}."
                             f"{image_format}",
                         ),
@@ -227,9 +239,10 @@ def run_diffusers(
                             f"{j:02}."
                             f"{short_prompt}_"
                             f"{seeds[i]}_"
-                            f"{guidance_scale}_"
+                            f"{guidance_scale}g_"
                             f"{width}x"
                             f"{height}_"
+                            f"{steps}s_"
                             f"{sched_short_name}."
                             f"{image_format}",
                         ),
@@ -264,11 +277,11 @@ def run_diffusers(
                 output_path + f"/videoframes/"
                 f"{short_prompt}_"
                 f"{seed}_"
-                f"{guidance_scale}_"
+                f"{guidance_scale}g_"
                 f"{width}x"
                 f"{height}_"
                 f"{firststep}-"
-                f"{laststep}_"
+                f"{laststep}s_"
                 f"{sched_short_name}_"
                 f"{fps}fps"
             )
@@ -317,7 +330,7 @@ def run_diffusers(
                 # adjust steps to account for denoise
                 step_old = step
                 step = ceil(steps / denoise)
-                if step > 1000 and sch_t1 == "DPMS":
+                if step > 1000 and sch_t1 == "DPMSM":
                     step_unreduced = step
                     steps = 1000
                     print()
@@ -331,7 +344,7 @@ def run_diffusers(
                     )
                     print()
                     print(
-                        f"INTERNAL STEP COUNT EXCEEDS 1000 MAX FOR DPMS. "
+                        f"INTERNAL STEP COUNT EXCEEDS 1000 MAX FOR DPMSM. "
                         f"INTERNAL STEPS WILL BE REDUCED TO 1000."
                     )
                     print()
@@ -422,7 +435,7 @@ def run_diffusers(
                             f"{j:02}."
                             f"{short_prompt}_"
                             f"{seed}_"
-                            f"{guidance_scale}_"
+                            f"{guidance_scale}g_"
                             f"{width}x"
                             f"{height}_"
                             f"{sched_short_name}."
@@ -440,7 +453,7 @@ def run_diffusers(
                             f"{j:02}."
                             f"{short_prompt}_"
                             f"{seed}_"
-                            f"{guidance_scale}_"
+                            f"{guidance_scale}g_"
                             f"{width}x"
                             f"{height}_"
                             f"{sched_short_name}."
@@ -481,11 +494,11 @@ def run_diffusers(
         output_path + f"/videoframes/"
         f"{short_prompt}_"
         f"{seed}_"
-        f"{guidance_scale}_"
+        f"{guidance_scale}g_"
         f"{width}x"
         f"{height}_"
         f"{firststep}-"
-        f"{laststep}_"
+        f"{laststep}s_"
         f"{sched_short_name}_"
         f"{fps}fps"
     )
@@ -502,21 +515,50 @@ def run_diffusers(
             f"{frames_path}/%06d-00."
             f"{short_prompt}_"
             f"{seed}_"
-            f"{guidance_scale}_"
+            f"{guidance_scale}g_"
             f"{width}x"
             f"{height}_"
             f"{sched_short_name}."
             f'{image_format}" '
             f"-vcodec libx264 "
-            f"-crf 17 "
+            f"-crf 7.5 "
             f"-preset veryslow"
             f"{reversed_or_not} "
             f'"videooutput/'
             f"{short_prompt}_"
             f"{seed}_"
-            f"{guidance_scale}_"
+            f"{guidance_scale}g_"
             f"{firststep}-"
-            f"{laststep}_"
+            f"{laststep}s_"
+            f"{sched_short_name}_"
+            f'{fps}fps.mp4"'
+        )
+        print(
+            f"ffmpeg "
+            f"-f image2 "
+            f"-r "
+            f"{fps} "
+            f"-start_number "
+            f"{ffmpeg_start} "
+            f'-i "'
+            f"{frames_path}/%06d-00."
+            f"{short_prompt}_"
+            f"{seed}_"
+            f"{guidance_scale}g_"
+            f"{width}x"
+            f"{height}_"
+            f"{sched_short_name}."
+            f'{image_format}" '
+            f"-vcodec libx264 "
+            f"-crf 7.5 "
+            f"-preset veryslow"
+            f"{reversed_or_not} "
+            f'"videooutput/'
+            f"{short_prompt}_"
+            f"{seed}_"
+            f"{guidance_scale}g_"
+            f"{firststep}-"
+            f"{laststep}s_"
             f"{sched_short_name}_"
             f'{fps}fps.mp4"'
         )
@@ -547,7 +589,7 @@ def clear_click():
         return {
             prompt_t0: "",
             neg_prompt_t0: "",
-            sch_t0: "DPMS",
+            sch_t0: "DEIS",
             iter_t0: 1,
             batch_t0: 1,
             steps_t0: 16,
@@ -560,13 +602,13 @@ def clear_click():
             video_t0: False,
             fps_t0: 5,
             firststep_t0: 1,
-            laststep_t0: 30,
+            laststep_t0: 32,
         }
     elif current_tab == 1:
         return {
             prompt_t1: "",
             neg_prompt_t1: "",
-            sch_t1: "DPMS",
+            sch_t1: "DEIS",
             image_t1: None,
             iter_t1: 1,
             batch_t1: 1,
@@ -581,13 +623,13 @@ def clear_click():
             video_t1: False,
             fps_t1: 5,
             firststep_t1: 1,
-            laststep_t1: 30,
+            laststep_t1: 32,
         }
     elif current_tab == 2:
         return {
             prompt_t2: "",
             neg_prompt_t2: "",
-            sch_t2: "DPMS",
+            sch_t2: "DEIS",
             legacy_t2: True,
             image_t2: None,
             iter_t2: 1,
@@ -602,7 +644,7 @@ def clear_click():
             video_t2: False,
             fps_t2: 5,
             firststep_t2: 1,
-            laststep_t2: 30,
+            laststep_t2: 32,
         }
 
 
@@ -717,10 +759,48 @@ def generate_click(
             model_path, subfolder="scheduler"
         )
     elif (
-        sched_name == "DPMS"
+        sched_name == "DPMSM"
         and type(scheduler) is not DPMSolverMultistepScheduler
     ):
         scheduler = DPMSolverMultistepScheduler.from_pretrained(
+            model_path, subfolder="scheduler"
+        )
+    elif (
+            sched_name == "DPMSS"
+            and type(scheduler) is not DPMSolverSinglestepScheduler
+    ):
+        scheduler = DPMSolverSinglestepScheduler.from_pretrained(
+            model_path, subfolder="scheduler"
+        )
+    elif (
+            sched_name == "DEIS"
+            and type(scheduler) is not DEISMultistepScheduler
+    ):
+        scheduler = DEISMultistepScheduler.from_pretrained(
+            model_path, subfolder="scheduler"
+        )
+    elif (
+            sched_name == "KDPM2"
+            and type(scheduler) is not KDPM2DiscreteScheduler
+    ):
+        scheduler = KDPM2DiscreteScheduler.from_pretrained(
+            model_path, subfolder="scheduler"
+        )
+    elif (
+            sched_name == "KDPM2A"
+            and type(scheduler) is not KDPM2AncestralDiscreteScheduler
+    ):
+        scheduler = KDPM2AncestralDiscreteScheduler.from_pretrained(
+            model_path, subfolder="scheduler"
+        )
+    elif (
+            sched_name == "Heun"
+            and type(scheduler) is not HeunDiscreteScheduler
+    ):
+        scheduler = HeunDiscreteScheduler.from_pretrained(
+            model_path, subfolder="scheduler"
+        )
+        scheduler = DPMSolverSinglestepScheduler.from_pretrained(
             model_path, subfolder="scheduler"
         )
 
@@ -959,7 +1039,7 @@ def generate_click(
         # adjust steps to account for denoise
         steps_t1_old = steps_t1
         steps_t1 = ceil(steps_t1 / denoise_t1)
-        if steps_t1 > 1000 and sch_t1 == "DPMS":
+        if steps_t1 > 1000 and sch_t1 == "DPMSM":
             steps_t1_unreduced = steps_t1
             steps_t1 = 1000
             print()
@@ -973,7 +1053,7 @@ def generate_click(
             )
             print()
             print(
-                f"INTERNAL STEP COUNT EXCEEDS 1000 MAX FOR DPMS. "
+                f"INTERNAL STEP COUNT EXCEEDS 1000 MAX FOR DPMSM. "
                 f"INTERNAL STEPS WILL BE REDUCED TO 1000."
             )
             print()
@@ -1145,7 +1225,7 @@ if __name__ == "__main__":
     pipe = None
 
     # check versions
-    is_v_0_8 = version.parse(_df_version) >= version.parse("0.8.0")
+    is_v_0_12 = version.parse(_df_version) >= version.parse("0.12.0")
     is_v_dev = version.parse(_df_version).is_prerelease
 
     # prerelease version use warning
@@ -1178,9 +1258,13 @@ if __name__ == "__main__":
             if entry.is_dir():
                 model_list.append(entry.name)
 
-    default_model = model_list[0] if len(model_list) > 0 else None
+    if "dreamlike-photoreal-2.0_ft_mse_onnx-fp16" in model_list:
+        default_model = "dreamlike-photoreal-2.0_ft_mse_onnx-fp16"
 
-    if is_v_0_8:
+    else:
+        default_model = model_list[0] if len(model_list) > 0 else None
+
+    if is_v_0_12:
         from diffusers import (
             OnnxStableDiffusionInpaintPipeline,
             OnnxRuntimeModel,
@@ -1189,9 +1273,15 @@ if __name__ == "__main__":
             EulerDiscreteScheduler,
             EulerAncestralDiscreteScheduler,
             DPMSolverMultistepScheduler,
+            KDPM2DiscreteScheduler,
+            KDPM2AncestralDiscreteScheduler,
+            HeunDiscreteScheduler,
+            DPMSolverSinglestepScheduler,
+            DEISMultistepScheduler
         )
 
-        sched_list = ["DPMS", "EulerA", "Euler", "DDPM", "DDIM", "LMS", "PNDM"]
+        sched_list = ["DEIS", "DPMSM", "DPMSS", "Euler", "EulerA", "KDPM2",
+                      "KDPM2A", "Heun", "DDIM", "LMS", "PNDM", "DDPM"]
     else:
         sched_list = ["DDIM", "LMS", "PNDM"]
 
@@ -1222,11 +1312,11 @@ if __name__ == "__main__":
                         label="negative prompt",
                     )
                     sch_t0 = gr.Radio(
-                        sched_list, value="DPMS", label="scheduler"
+                        sched_list, value="DEIS", label="scheduler"
                     )
                     with gr.Row():
                         iter_t0 = gr.Slider(
-                            1, 24, value=1, step=1, label="iteration count"
+                            1, 300, value=1, step=1, label="iteration count"
                         )
                         batch_t0 = gr.Slider(
                             1, 4, value=1, step=1, label="batch size"
@@ -1235,13 +1325,13 @@ if __name__ == "__main__":
                         1, 300, value=16, step=1, label="steps"
                     )
                     guid_t0 = gr.Slider(
-                        0, 50, value=3.5, step=0.1, label="guidance"
+                        1.01, 50, value=3.5, step=0.01, label="guidance"
                     )
                     width_t0 = gr.Slider(
-                        384, 960, value=512, step=64, label="width"
+                        256, 1024, value=512, step=64, label="width"
                     )
                     height_t0 = gr.Slider(
-                        384, 960, value=512, step=64, label="height"
+                        256, 1024, value=512, step=64, label="height"
                     )
                     eta_t0 = gr.Slider(
                         0,
@@ -1279,7 +1369,7 @@ if __name__ == "__main__":
                         laststep_t0 = gr.Slider(
                             1,
                             300,
-                            value=30,
+                            value=32,
                             step=1,
                             label="last step",
                             interactive=False,
@@ -1292,14 +1382,14 @@ if __name__ == "__main__":
                         label="negative prompt",
                     )
                     sch_t1 = gr.Radio(
-                        sched_list, value="DPMS", label="scheduler"
+                        sched_list, value="DEIS", label="scheduler"
                     )
                     image_t1 = gr.Image(
                         label="input image", type="pil", elem_id="image_init"
                     )
                     with gr.Row():
                         iter_t1 = gr.Slider(
-                            1, 24, value=1, step=1, label="iteration count"
+                            1, 300, value=1, step=1, label="iteration count"
                         )
                         batch_t1 = gr.Slider(
                             1, 4, value=1, step=1, label="batch size"
@@ -1308,7 +1398,7 @@ if __name__ == "__main__":
                         1, 300, value=16, step=1, label="steps"
                     )
                     guid_t1 = gr.Slider(
-                        0, 50, value=3.5, step=0.1, label="guidance"
+                        1.01, 50, value=3.5, step=0.01, label="guidance"
                     )
                     width_t1 = gr.Slider(
                         384, 960, value=512, step=64, label="width"
@@ -1355,7 +1445,7 @@ if __name__ == "__main__":
                         laststep_t1 = gr.Slider(
                             1,
                             300,
-                            value=30,
+                            value=32,
                             step=1,
                             label="last step",
                             interactive=False,
@@ -1368,7 +1458,7 @@ if __name__ == "__main__":
                         label="negative prompt",
                     )
                     sch_t2 = gr.Radio(
-                        sched_list, value="DPMS", label="scheduler"
+                        sched_list, value="DEIS", label="scheduler"
                     )
                     legacy_t2 = gr.Checkbox(value=True, label="legacy inpaint")
                     image_t2 = gr.Image(
@@ -1380,7 +1470,7 @@ if __name__ == "__main__":
                     )
                     with gr.Row():
                         iter_t2 = gr.Slider(
-                            1, 24, value=1, step=1, label="iteration count"
+                            1, 300, value=1, step=1, label="iteration count"
                         )
                         batch_t2 = gr.Slider(
                             1, 4, value=1, step=1, label="batch size"
@@ -1389,7 +1479,7 @@ if __name__ == "__main__":
                         1, 300, value=16, step=1, label="steps"
                     )
                     guid_t2 = gr.Slider(
-                        0, 50, value=3.5, step=0.1, label="guidance"
+                        1.01, 50, value=3.5, step=0.01, label="guidance"
                     )
                     width_t2 = gr.Slider(
                         384, 960, value=512, step=64, label="width"
@@ -1433,7 +1523,7 @@ if __name__ == "__main__":
                         laststep_t2 = gr.Slider(
                             1,
                             300,
-                            value=30,
+                            value=32,
                             step=1,
                             label="last step",
                             interactive=False,
