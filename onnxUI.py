@@ -1210,7 +1210,8 @@ if __name__ == "__main__":
         "--release-memory-on-change",
         action="store_true",
         default=False,
-        help="keep the pipeline allocated when changing pipelines.",
+        help="de-allocate the pipeline and release memory allocated when "
+             "changing pipelines.",
     )
     parser.add_argument(
         "--cpu-textenc",
