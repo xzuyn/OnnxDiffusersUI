@@ -708,8 +708,8 @@ def generate_click(
     global current_tab
     global current_pipe
     global current_legacy
-    global release_memory
-    global keep_memory_on_change
+    global release_memory_after_generation
+    global release_memory_on_change
     global scheduler
     global pipe
 
@@ -804,8 +804,8 @@ def generate_click(
 
     # select which pipeline depending on current tab
     if current_tab == 0:
-        if current_pipe == ("img2img" or "inpaint") and not \
-                keep_memory_on_change:
+        if current_pipe == ("img2img" or "inpaint") and \
+                release_memory_on_change:
             pipe = None
             gc.collect()
         if current_pipe != "txt2img" or pipe is None:
@@ -855,8 +855,8 @@ def generate_click(
                 )
         current_pipe = "txt2img"
     elif current_tab == 1:
-        if current_pipe == ("txt2img" or "inpaint") and not \
-                keep_memory_on_change:
+        if current_pipe == ("txt2img" or "inpaint") and \
+                release_memory_on_change:
             pipe = None
             gc.collect()
         if current_pipe != "img2img" or pipe is None:
@@ -905,7 +905,7 @@ def generate_click(
         current_pipe = "img2img"
     elif current_tab == 2:
         if current_pipe == ("txt2img" or "img2img") and \
-                not keep_memory_on_change:
+                release_memory_on_change:
             pipe = None
             gc.collect()
         if (
@@ -1147,7 +1147,7 @@ def generate_click(
             laststep_t2,
         )
 
-    if release_memory:
+    if release_memory_after_generation:
         pipe = None
         gc.collect()
 
@@ -1201,13 +1201,13 @@ if __name__ == "__main__":
         help="run ONNX with CPU",
     )
     parser.add_argument(
-        "--release-memory",
+        "--release-memory-after-generation",
         action="store_true",
         default=False,
         help="de-allocate the pipeline and release memory after generation",
     )
     parser.add_argument(
-        "--keep-memory-on-change",
+        "--release-memory-on-change",
         action="store_true",
         default=False,
         help="keep the pipeline allocated when changing pipelines.",
@@ -1232,8 +1232,8 @@ if __name__ == "__main__":
     current_tab = 0
     current_pipe = "txt2img"
     current_legacy = False
-    release_memory = args.release_memory
-    keep_memory_on_change = args.keep_memory_on_change
+    release_memory_after_generation = args.release_memory_after_generation
+    release_memory_on_change = args.release_memory_on_change
     textenc_on_cpu = args.cpu_textenc
     vaedec_on_cpu = args.cpu_vaedec
 
