@@ -709,6 +709,7 @@ def generate_click(
     global current_pipe
     global current_legacy
     global release_memory
+    global keep_memory_on_change
     global scheduler
     global pipe
 
@@ -803,6 +804,10 @@ def generate_click(
 
     # select which pipeline depending on current tab
     if current_tab == 0:
+        if current_pipe == ("img2img" or "inpaint") and not \
+                keep_memory_on_change:
+            pipe = None
+            gc.collect()
         if current_pipe != "txt2img" or pipe is None:
             if textenc_on_cpu and vaedec_on_cpu:
                 print("Using CPU Text Encoder")
@@ -850,6 +855,10 @@ def generate_click(
                 )
         current_pipe = "txt2img"
     elif current_tab == 1:
+        if current_pipe == ("txt2img" or "inpaint") and not \
+                keep_memory_on_change:
+            pipe = None
+            gc.collect()
         if current_pipe != "img2img" or pipe is None:
             if textenc_on_cpu and vaedec_on_cpu:
                 print("Using CPU Text Encoder")
@@ -895,6 +904,10 @@ def generate_click(
                 )
         current_pipe = "img2img"
     elif current_tab == 2:
+        if current_pipe == ("txt2img" or "img2img") and \
+                not keep_memory_on_change:
+            pipe = None
+            gc.collect()
         if (
             current_pipe != "inpaint"
             or pipe is None
@@ -1194,6 +1207,12 @@ if __name__ == "__main__":
         help="de-allocate the pipeline and release memory after generation",
     )
     parser.add_argument(
+        "--keep-memory-on-change",
+        action="store_true",
+        default=False,
+        help="keep the pipeline allocated when changing pipelines.",
+    )
+    parser.add_argument(
         "--cpu-textenc",
         action="store_true",
         help="Run Text Encoder on CPU, saves VRAM by running Text Encoder on CPU",
@@ -1214,6 +1233,7 @@ if __name__ == "__main__":
     current_pipe = "txt2img"
     current_legacy = False
     release_memory = args.release_memory
+    keep_memory_on_change = args.keep_memory_on_change
     textenc_on_cpu = args.cpu_textenc
     vaedec_on_cpu = args.cpu_vaedec
 
@@ -1394,10 +1414,10 @@ if __name__ == "__main__":
                         1.01, 50, value=3.5, step=0.01, label="guidance"
                     )
                     width_t1 = gr.Slider(
-                        384, 960, value=512, step=64, label="width"
+                        256, 1024, value=512, step=64, label="width"
                     )
                     height_t1 = gr.Slider(
-                        384, 960, value=512, step=64, label="height"
+                        256, 1024, value=512, step=64, label="height"
                     )
                     denoise_t1 = gr.Slider(
                         0, 1, value=0.8, step=0.01, label="denoise strength"
@@ -1475,10 +1495,10 @@ if __name__ == "__main__":
                         1.01, 50, value=3.5, step=0.01, label="guidance"
                     )
                     width_t2 = gr.Slider(
-                        384, 960, value=512, step=64, label="width"
+                        256, 1024, value=512, step=64, label="width"
                     )
                     height_t2 = gr.Slider(
-                        384, 960, value=512, step=64, label="height"
+                        256, 1024, value=512, step=64, label="height"
                     )
                     eta_t2 = gr.Slider(
                         0,
