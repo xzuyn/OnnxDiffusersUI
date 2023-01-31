@@ -1151,6 +1151,7 @@ def generate_click(
             fps_t0,
             firststep_t0,
             laststep_t0,
+            loopback_t1,
         )
     elif current_tab == 1:
         # input image resizing
@@ -1257,6 +1258,7 @@ def generate_click(
             fps_t2,
             firststep_t2,
             laststep_t2,
+            loopback_t1,
         )
 
     if release_memory_after_generation:
