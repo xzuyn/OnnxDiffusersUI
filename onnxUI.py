@@ -916,9 +916,9 @@ def generate_click(
             pipe = None
             gc.collect()
         if current_pipe != "txt2img" or pipe is None:
-            if textenc_on_cpu and vaedec_on_cpu:
+            if textenc_on_cpu and vae_on_cpu:
                 print("Using CPU Text Encoder")
-                print("Using CPU VAE Decoder")
+                print("Using CPU VAE")
                 cputextenc = OnnxRuntimeModel.from_pretrained(
                     model_path + "/text_encoder"
                 )
@@ -944,8 +944,8 @@ def generate_click(
                     scheduler=scheduler,
                     text_encoder=cputextenc,
                 )
-            elif vaedec_on_cpu:
-                print("Using CPU VAE Decoder")
+            elif vae_on_cpu:
+                print("Using CPU VAE")
                 cpuvaedec = OnnxRuntimeModel.from_pretrained(
                     model_path + "/vae_decoder"
                 )
@@ -969,14 +969,17 @@ def generate_click(
             pipe = None
             gc.collect()
         if current_pipe != "img2img" or pipe is None:
-            if textenc_on_cpu and vaedec_on_cpu:
+            if textenc_on_cpu and vae_on_cpu:
                 print("Using CPU Text Encoder")
-                print("Using CPU VAE Decoder")
+                print("Using CPU VAE")
                 cputextenc = OnnxRuntimeModel.from_pretrained(
                     model_path + "/text_encoder"
                 )
                 cpuvaedec = OnnxRuntimeModel.from_pretrained(
                     model_path + "/vae_decoder"
+                )
+                cpuvaeenc = OnnxRuntimeModel.from_pretrained(
+                    model_path + "/vae_encoder"
                 )
                 pipe = OnnxStableDiffusionImg2ImgPipeline.from_pretrained(
                     model_path,
@@ -984,6 +987,7 @@ def generate_click(
                     scheduler=scheduler,
                     text_encoder=cputextenc,
                     vae_decoder=cpuvaedec,
+                    vae_encoder=cpuvaeenc,
                 )
             elif textenc_on_cpu:
                 print("Using CPU Text Encoder")
@@ -996,16 +1000,20 @@ def generate_click(
                     scheduler=scheduler,
                     text_encoder=cputextenc,
                 )
-            elif vaedec_on_cpu:
-                print("Using CPU VAE Decoder")
+            elif vae_on_cpu:
+                print("Using CPU VAE")
                 cpuvaedec = OnnxRuntimeModel.from_pretrained(
                     model_path + "/vae_decoder"
+                )
+                cpuvaeenc = OnnxRuntimeModel.from_pretrained(
+                    model_path + "/vae_encoder"
                 )
                 pipe = OnnxStableDiffusionImg2ImgPipeline.from_pretrained(
                     model_path,
                     provider=provider,
                     scheduler=scheduler,
                     vae_decoder=cpuvaedec,
+                    vae_encoder=cpuvaeenc,
                 )
             else:
                 pipe = OnnxStableDiffusionImg2ImgPipeline.from_pretrained(
@@ -1025,14 +1033,17 @@ def generate_click(
             or current_legacy != legacy_t2
         ):
             if legacy_t2:
-                if textenc_on_cpu and vaedec_on_cpu:
+                if textenc_on_cpu and vae_on_cpu:
                     print("Using CPU Text Encoder")
-                    print("Using CPU VAE Decoder")
+                    print("Using CPU VAE")
                     cputextenc = OnnxRuntimeModel.from_pretrained(
                         model_path + "/text_encoder"
                     )
                     cpuvaedec = OnnxRuntimeModel.from_pretrained(
                         model_path + "/vae_decoder"
+                    )
+                    cpuvaeenc = OnnxRuntimeModel.from_pretrained(
+                        model_path + "/vae_encoder"
                     )
                     pipe = OnnxStableDiffusionInpaintPipelineLegacy.from_pretrained(
                         model_path,
@@ -1052,30 +1063,37 @@ def generate_click(
                         scheduler=scheduler,
                         text_encoder=cputextenc,
                     )
-                elif vaedec_on_cpu:
-                    print("Using CPU VAE Decoder")
+                elif vae_on_cpu:
+                    print("Using CPU VAE")
                     cpuvaedec = OnnxRuntimeModel.from_pretrained(
                         model_path + "/vae_decoder"
+                    )
+                    cpuvaeenc = OnnxRuntimeModel.from_pretrained(
+                        model_path + "/vae_encoder"
                     )
                     pipe = OnnxStableDiffusionInpaintPipelineLegacy.from_pretrained(
                         model_path,
                         provider=provider,
                         scheduler=scheduler,
                         vae_decoder=cpuvaedec,
+                        vae_encoder=cpuvaeenc,
                     )
                 else:
                     pipe = OnnxStableDiffusionInpaintPipelineLegacy.from_pretrained(
                         model_path, provider=provider, scheduler=scheduler
                     )
             else:
-                if textenc_on_cpu and vaedec_on_cpu:
+                if textenc_on_cpu and vae_on_cpu:
                     print("Using CPU Text Encoder")
-                    print("Using CPU VAE Decoder")
+                    print("Using CPU VAE")
                     cputextenc = OnnxRuntimeModel.from_pretrained(
                         model_path + "/text_encoder"
                     )
                     cpuvaedec = OnnxRuntimeModel.from_pretrained(
                         model_path + "/vae_decoder"
+                    )
+                    cpuvaeenc = OnnxRuntimeModel.from_pretrained(
+                        model_path + "/vae_encoder"
                     )
                     pipe = OnnxStableDiffusionInpaintPipeline.from_pretrained(
                         model_path,
@@ -1083,6 +1101,7 @@ def generate_click(
                         scheduler=scheduler,
                         text_encoder=cputextenc,
                         vae_decoder=cpuvaedec,
+                        vae_encoder=cpuvaeenc,
                     )
                 elif textenc_on_cpu:
                     print("Using CPU Text Encoder")
@@ -1095,16 +1114,20 @@ def generate_click(
                         scheduler=scheduler,
                         text_encoder=cputextenc,
                     )
-                elif vaedec_on_cpu:
-                    print("Using CPU VAE Decoder")
+                elif vae_on_cpu:
+                    print("Using CPU VAE")
                     cpuvaedec = OnnxRuntimeModel.from_pretrained(
                         model_path + "/vae_decoder"
+                    )
+                    cpuvaeenc = OnnxRuntimeModel.from_pretrained(
+                        model_path + "/vae_encoder"
                     )
                     pipe = OnnxStableDiffusionInpaintPipeline.from_pretrained(
                         model_path,
                         provider=provider,
                         scheduler=scheduler,
                         vae_decoder=cpuvaedec,
+                        vae_encoder=cpuvaeenc,
                     )
                 else:
                     pipe = OnnxStableDiffusionInpaintPipeline.from_pretrained(
@@ -1334,10 +1357,10 @@ if __name__ == "__main__":
         help="Run Text Encoder on CPU, saves VRAM by running Text Encoder on CPU",
     )
     parser.add_argument(
-        "--cpu-vaedec",
+        "--cpu-vae",
         action="store_true",
         default=False,
-        help="Run VAE Decoder on CPU, saves VRAM by running VAE Decoder on CPU",
+        help="Run VAE on CPU, saves VRAM by running VAE on CPU",
     )
     args = parser.parse_args()
 
@@ -1352,7 +1375,7 @@ if __name__ == "__main__":
     release_memory_after_generation = args.release_memory_after_generation
     release_memory_on_change = args.release_memory_on_change
     textenc_on_cpu = args.cpu_textenc
-    vaedec_on_cpu = args.cpu_vaedec
+    vae_on_cpu = args.cpu_vae
 
     # diffusers objects
     scheduler = None
@@ -1470,10 +1493,10 @@ if __name__ == "__main__":
                         1.01, 50, value=3.5, step=0.01, label="guidance"
                     )
                     width_t0 = gr.Slider(
-                        256, 1024, value=512, step=64, label="width"
+                        256, 2048, value=512, step=64, label="width"
                     )
                     height_t0 = gr.Slider(
-                        256, 1024, value=512, step=64, label="height"
+                        256, 2048, value=512, step=64, label="height"
                     )
                     eta_t0 = gr.Slider(
                         0,
@@ -1546,10 +1569,10 @@ if __name__ == "__main__":
                         1.01, 50, value=3.5, step=0.01, label="guidance"
                     )
                     width_t1 = gr.Slider(
-                        256, 1024, value=512, step=64, label="width"
+                        256, 2048, value=512, step=64, label="width"
                     )
                     height_t1 = gr.Slider(
-                        256, 1024, value=512, step=64, label="height"
+                        256, 2048, value=512, step=64, label="height"
                     )
                     denoise_t1 = gr.Slider(
                         0, 1, value=0.8, step=0.01, label="denoise strength"
@@ -1627,10 +1650,10 @@ if __name__ == "__main__":
                         1.01, 50, value=3.5, step=0.01, label="guidance"
                     )
                     width_t2 = gr.Slider(
-                        256, 1024, value=512, step=64, label="width"
+                        256, 2048, value=512, step=64, label="width"
                     )
                     height_t2 = gr.Slider(
-                        256, 1024, value=512, step=64, label="height"
+                        256, 2048, value=512, step=64, label="height"
                     )
                     eta_t2 = gr.Slider(
                         0,
