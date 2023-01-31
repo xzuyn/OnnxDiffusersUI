@@ -45,10 +45,12 @@ def run_diffusers(
     fps: float,
     firststep: int,
     laststep: int,
+    loopback: bool,
 ) -> Tuple[list, str]:
     global model_name
     global current_pipe
     global pipe
+    global total_image_count
 
     prompt.strip("\n")
     neg_prompt.strip("\n")
@@ -162,17 +164,49 @@ def run_diffusers(
                 finish = time.time()
             elif current_pipe == "img2img":
                 start = time.time()
-                batch_images = pipe(
-                    prompt,
-                    negative_prompt=neg_prompt,
-                    image=init_image,
-                    num_inference_steps=steps,
-                    guidance_scale=guidance_scale,
-                    eta=eta,
-                    strength=denoise_strength,
-                    num_images_per_prompt=batch_size,
-                    generator=rng,
-                ).images
+
+                if loopback is True:
+                    try:
+                        loopback_image
+                    except UnboundLocalError:
+                        loopback_image = None
+
+                    if loopback_image is not None:
+                        batch_images = pipe(
+                            prompt,
+                            negative_prompt=neg_prompt,
+                            image=loopback_image,
+                            num_inference_steps=steps,
+                            guidance_scale=guidance_scale,
+                            eta=eta,
+                            strength=denoise_strength,
+                            num_images_per_prompt=batch_size,
+                            generator=rng,
+                        ).images
+                    elif loopback_image is None:
+                        batch_images = pipe(
+                            prompt,
+                            negative_prompt=neg_prompt,
+                            image=init_image,
+                            num_inference_steps=steps,
+                            guidance_scale=guidance_scale,
+                            eta=eta,
+                            strength=denoise_strength,
+                            num_images_per_prompt=batch_size,
+                            generator=rng,
+                        ).images
+                elif loopback is False:
+                    batch_images = pipe(
+                        prompt,
+                        negative_prompt=neg_prompt,
+                        image=init_image,
+                        num_inference_steps=steps,
+                        guidance_scale=guidance_scale,
+                        eta=eta,
+                        strength=denoise_strength,
+                        num_images_per_prompt=batch_size,
+                        generator=rng,
+                    ).images
                 finish = time.time()
             elif current_pipe == "inpaint":
                 start = time.time()
@@ -209,6 +243,9 @@ def run_diffusers(
             short_prompt = (
                 short_prompt[:64] if len(short_prompt) > 64 else short_prompt
             )
+
+            if loopback is True:
+                loopback_image = batch_images
 
             # png output
             if image_format == "png":
@@ -624,6 +661,7 @@ def clear_click():
             fps_t1: 5,
             firststep_t1: 1,
             laststep_t1: 32,
+            loopback_t1: False,
         }
     elif current_tab == 2:
         return {
@@ -684,6 +722,7 @@ def generate_click(
     fps_t1,
     firststep_t1,
     laststep_t1,
+    loopback_t1,
     prompt_t2,
     neg_prompt_t2,
     sch_t2,
@@ -718,6 +757,7 @@ def generate_click(
         model_name = model_drop
         scheduler = None
         pipe = None
+        gc.collect()
     model_path = os.path.join("model", model_name)
 
     # select which scheduler depending on current tab
@@ -767,45 +807,42 @@ def generate_click(
             model_path, subfolder="scheduler"
         )
     elif (
-            sched_name == "DPMSS"
-            and type(scheduler) is not DPMSolverSinglestepScheduler
+        sched_name == "DPMSS"
+        and type(scheduler) is not DPMSolverSinglestepScheduler
     ):
         scheduler = DPMSolverSinglestepScheduler.from_pretrained(
             model_path, subfolder="scheduler"
         )
     elif (
-            sched_name == "DEIS"
-            and type(scheduler) is not DEISMultistepScheduler
+        sched_name == "DEIS" and type(scheduler) is not DEISMultistepScheduler
     ):
         scheduler = DEISMultistepScheduler.from_pretrained(
             model_path, subfolder="scheduler"
         )
     elif (
-            sched_name == "KDPM2"
-            and type(scheduler) is not KDPM2DiscreteScheduler
+        sched_name == "KDPM2" and type(scheduler) is not KDPM2DiscreteScheduler
     ):
         scheduler = KDPM2DiscreteScheduler.from_pretrained(
             model_path, subfolder="scheduler"
         )
     elif (
-            sched_name == "KDPM2A"
-            and type(scheduler) is not KDPM2AncestralDiscreteScheduler
+        sched_name == "KDPM2A"
+        and type(scheduler) is not KDPM2AncestralDiscreteScheduler
     ):
         scheduler = KDPM2AncestralDiscreteScheduler.from_pretrained(
             model_path, subfolder="scheduler"
         )
-    elif (
-            sched_name == "Heun"
-            and type(scheduler) is not HeunDiscreteScheduler
-    ):
+    elif sched_name == "Heun" and type(scheduler) is not HeunDiscreteScheduler:
         scheduler = HeunDiscreteScheduler.from_pretrained(
             model_path, subfolder="scheduler"
         )
 
     # select which pipeline depending on current tab
     if current_tab == 0:
-        if current_pipe == ("img2img" or "inpaint") and \
-                release_memory_on_change:
+        if (
+            current_pipe == ("img2img" or "inpaint")
+            and release_memory_on_change
+        ):
             pipe = None
             gc.collect()
         if current_pipe != "txt2img" or pipe is None:
@@ -855,8 +892,10 @@ def generate_click(
                 )
         current_pipe = "txt2img"
     elif current_tab == 1:
-        if current_pipe == ("txt2img" or "inpaint") and \
-                release_memory_on_change:
+        if (
+            current_pipe == ("txt2img" or "inpaint")
+            and release_memory_on_change
+        ):
             pipe = None
             gc.collect()
         if current_pipe != "img2img" or pipe is None:
@@ -904,8 +943,10 @@ def generate_click(
                 )
         current_pipe = "img2img"
     elif current_tab == 2:
-        if current_pipe == ("txt2img" or "img2img") and \
-                release_memory_on_change:
+        if (
+            current_pipe == ("txt2img" or "img2img")
+            and release_memory_on_change
+        ):
             pipe = None
             gc.collect()
         if (
@@ -1099,6 +1140,7 @@ def generate_click(
             fps_t1,
             firststep_t1,
             laststep_t1,
+            loopback_t1,
         )
     elif current_tab == 2:
         input_image = image_t2["image"].convert("RGB")
@@ -1211,16 +1253,18 @@ if __name__ == "__main__":
         action="store_true",
         default=False,
         help="de-allocate the pipeline and release memory allocated when "
-             "changing pipelines.",
+        "changing pipelines.",
     )
     parser.add_argument(
         "--cpu-textenc",
         action="store_true",
+        default=False,
         help="Run Text Encoder on CPU, saves VRAM by running Text Encoder on CPU",
     )
     parser.add_argument(
         "--cpu-vaedec",
         action="store_true",
+        default=False,
         help="Run VAE Decoder on CPU, saves VRAM by running VAE Decoder on CPU",
     )
     args = parser.parse_args()
@@ -1291,11 +1335,23 @@ if __name__ == "__main__":
             KDPM2AncestralDiscreteScheduler,
             HeunDiscreteScheduler,
             DPMSolverSinglestepScheduler,
-            DEISMultistepScheduler
+            DEISMultistepScheduler,
         )
 
-        sched_list = ["DEIS", "DPMSM", "DPMSS", "Euler", "EulerA", "KDPM2",
-                      "KDPM2A", "Heun", "DDIM", "LMS", "PNDM", "DDPM"]
+        sched_list = [
+            "DEIS",
+            "DPMSM",
+            "DPMSS",
+            "Euler",
+            "EulerA",
+            "Heun",
+            "KDPM2",
+            "KDPM2A",
+            "DDIM",
+            "LMS",
+            "PNDM",
+            "DDPM",
+        ]
     else:
         sched_list = ["DDIM", "LMS", "PNDM"]
 
@@ -1404,6 +1460,9 @@ if __name__ == "__main__":
                     with gr.Row():
                         iter_t1 = gr.Slider(
                             1, 300, value=1, step=1, label="iteration count"
+                        )
+                        loopback_t1 = gr.Checkbox(
+                            value=False, label="loopback (use iteration count)"
                         )
                         batch_t1 = gr.Slider(
                             1, 4, value=1, step=1, label="batch size"
@@ -1584,6 +1643,7 @@ if __name__ == "__main__":
             fps_t1,
             firststep_t1,
             laststep_t1,
+            loopback_t1,
         ]
         tab2_inputs = [
             prompt_t2,
