@@ -124,29 +124,49 @@ def run_diffusers(
     if video is False:
         for i in range(iteration_count):
             print(f"iteration {i + 1}/{iteration_count}")
-
-            info = (
-                f"{next_index + i:06} | "
-                f"prompt: {prompt} "
-                f"negative prompt: {neg_prompt} | "
-                f"scheduler: {sched_name} "
-                f"model: {model_name} "
-                f"iteration size: {iteration_count} "
-                f"batch size: {batch_size} "
-                f"steps: {steps} "
-                f"scale: {guidance_scale} "
-                f"width: {width} "
-                f"height: {height} "
-                f"eta: {eta} "
-                f"seed: {seeds[i]}"
-            )
+            
+            if loopback is True:
+                info = (
+                    f"{next_index + i:06} | "
+                    f"prompt: {prompt} "
+                    f"negative prompt: {neg_prompt} | "
+                    f"scheduler: {sched_name} "
+                    f"model: {model_name} "
+                    f"iteration size: {iteration_count} "
+                    f"batch size: {batch_size} "
+                    f"steps: {steps} "
+                    f"scale: {guidance_scale} "
+                    f"width: {width} "
+                    f"height: {height} "
+                    f"eta: {eta} "
+                    f"seed: {seeds[0]}"
+                )
+            elif loopback is False:
+                info = (
+                    f"{next_index + i:06} | "
+                    f"prompt: {prompt} "
+                    f"negative prompt: {neg_prompt} | "
+                    f"scheduler: {sched_name} "
+                    f"model: {model_name} "
+                    f"iteration size: {iteration_count} "
+                    f"batch size: {batch_size} "
+                    f"steps: {steps} "
+                    f"scale: {guidance_scale} "
+                    f"width: {width} "
+                    f"height: {height} "
+                    f"eta: {eta} "
+                    f"seed: {seeds[i]}"
+                )
             if current_pipe == "img2img":
                 info = info + f" denoise: {denoise_strength}"
             with open(os.path.join(output_path, "history.txt"), "a") as log:
                 log.write(info + "\n")
 
             # create generator object from seed
-            rng = np.random.RandomState(seeds[i])
+            if loopback is True:
+                rng = np.random.RandomState(seeds[0])
+            elif loopback is False:
+                rng = np.random.RandomState(seeds[i])
 
             if current_pipe == "txt2img":
                 start = time.time()
@@ -246,49 +266,89 @@ def run_diffusers(
 
             if loopback is True:
                 loopback_image = batch_images
-
-            # png output
-            if image_format == "png":
-                for j in range(batch_size):
-                    batch_images[j].save(
-                        os.path.join(
-                            output_path,
-                            f"{next_index + i:06}-"
-                            f"{j:02}."
-                            f"{short_prompt}_"
-                            f"{seeds[i]}_"
-                            f"{guidance_scale}g_"
-                            f"{width}x"
-                            f"{height}_"
-                            f"{steps}s_"
-                            f"{sched_short_name}."
-                            f"{image_format}",
-                        ),
-                        optimize=True,
-                    )
-            # jpg output
-            elif image_format == "jpg":
-                for j in range(batch_size):
-                    batch_images[j].save(
-                        os.path.join(
-                            output_path,
-                            f"{next_index + i:06}-"
-                            f"{j:02}."
-                            f"{short_prompt}_"
-                            f"{seeds[i]}_"
-                            f"{guidance_scale}g_"
-                            f"{width}x"
-                            f"{height}_"
-                            f"{steps}s_"
-                            f"{sched_short_name}."
-                            f"{image_format}",
-                        ),
-                        quality=95,
-                        subsampling=0,
-                        optimize=True,
-                        progressive=True,
-                    )
-
+                # png output
+                if image_format == "png":
+                    for j in range(batch_size):
+                        batch_images[j].save(
+                            os.path.join(
+                                output_path,
+                                f"{next_index + i:06}-"
+                                f"{j:02}."
+                                f"{short_prompt}_"
+                                f"{seeds[0]}_"
+                                f"{guidance_scale}g_"
+                                f"{width}x"
+                                f"{height}_"
+                                f"{steps}s_"
+                                f"{sched_short_name}."
+                                f"{image_format}",
+                            ),
+                            optimize=True,
+                        )
+                # jpg output
+                elif image_format == "jpg":
+                    for j in range(batch_size):
+                        batch_images[j].save(
+                            os.path.join(
+                                output_path,
+                                f"{next_index + i:06}-"
+                                f"{j:02}."
+                                f"{short_prompt}_"
+                                f"{seeds[0]}_"
+                                f"{guidance_scale}g_"
+                                f"{width}x"
+                                f"{height}_"
+                                f"{steps}s_"
+                                f"{sched_short_name}."
+                                f"{image_format}",
+                            ),
+                            quality=95,
+                            subsampling=0,
+                            optimize=True,
+                            progressive=True,
+                        )
+            elif loopback is False:
+                # png output
+                if image_format == "png":
+                    for j in range(batch_size):
+                        batch_images[j].save(
+                            os.path.join(
+                                output_path,
+                                f"{next_index + i:06}-"
+                                f"{j:02}."
+                                f"{short_prompt}_"
+                                f"{seeds[i]}_"
+                                f"{guidance_scale}g_"
+                                f"{width}x"
+                                f"{height}_"
+                                f"{steps}s_"
+                                f"{sched_short_name}."
+                                f"{image_format}",
+                            ),
+                            optimize=True,
+                        )
+                # jpg output
+                elif image_format == "jpg":
+                    for j in range(batch_size):
+                        batch_images[j].save(
+                            os.path.join(
+                                output_path,
+                                f"{next_index + i:06}-"
+                                f"{j:02}."
+                                f"{short_prompt}_"
+                                f"{seeds[i]}_"
+                                f"{guidance_scale}g_"
+                                f"{width}x"
+                                f"{height}_"
+                                f"{steps}s_"
+                                f"{sched_short_name}."
+                                f"{image_format}",
+                            ),
+                            quality=95,
+                            subsampling=0,
+                            optimize=True,
+                            progressive=True,
+                        )
             images.extend(batch_images)
             time_taken = time_taken + (finish - start)
     else:
@@ -507,14 +567,24 @@ def run_diffusers(
 
     time_taken = time_taken / 60.0
     if iteration_count > 1 or video is True:
-        status = (
-            f"Run indexes {next_index:06} "
-            f"to {next_index + iteration_count - 1:06} "
-            f"took {time_taken:.1f} minutes "
-            f"to generate {iteration_count} "
-            f"iterations with batch size of {batch_size}. "
-            f"seeds: " + np.array2string(seeds, separator=",")
-        )
+        if loopback is True:
+            status = (
+                f"Run indexes {next_index:06} "
+                f"to {next_index + iteration_count - 1:06} "
+                f"took {time_taken:.1f} minutes "
+                f"to generate {iteration_count} "
+                f"iterations with batch size of {batch_size}. "
+                f"seed: {seeds[0]}"
+            )
+        elif loopback is False:
+            status = (
+                f"Run indexes {next_index:06} "
+                f"to {next_index + iteration_count - 1:06} "
+                f"took {time_taken:.1f} minutes "
+                f"to generate {iteration_count} "
+                f"iterations with batch size of {batch_size}. "
+                f"seeds: " + np.array2string(seeds, separator=",")
+            )
     else:
         status = (
             f"Run index {next_index:06} "
