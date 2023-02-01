@@ -426,7 +426,7 @@ def run_diffusers(
 
                 # adjust steps to account for denoise
                 step_old = step
-                step = ceil(steps / denoise)
+                step = ceil(steps / denoise_strength)
                 if step > 1000 and (sch_t1 == "DPMSM" or "DPMSS" or "DEIS"):
                     step_unreduced = step
                     steps = 1000
@@ -437,7 +437,7 @@ def run_diffusers(
                     )
                     print(
                         f"Without adjustment the actual step count would be "
-                        f"~{ceil(step_old * denoise)} steps."
+                        f"~{ceil(step_old * denoise_strength)} steps."
                     )
                     print()
                     print(
@@ -454,7 +454,7 @@ def run_diffusers(
                     )
                     print(
                         f"Without adjustment the actual step count would be "
-                        f"~{ceil(step_old * denoise)} steps."
+                        f"~{ceil(step_old * denoise_strength)} steps."
                     )
                     print()
 
