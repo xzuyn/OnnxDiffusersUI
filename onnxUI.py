@@ -3,8 +3,11 @@ import functools
 import gc
 import os
 import re
+import cv2
 import time
 import colortrans
+import onnxruntime as ort
+from huggingface_hub import hf_hub_download
 from typing import Optional, Tuple
 from math import ceil
 
@@ -177,11 +180,16 @@ def run_diffusers(
                     if loopback_image is not None:
                         if loopback_halving is True:
                             denoise_strength = denoise_strength * 0.5
-                            steps = steps * 2
-                            print(f"denoise adjusted to {denoise_strength}")
                             if denoise_strength < 0.01:
                                 denoise_strength = 0.01
                                 print("limited denoise to 0.01")
+                            print(f"denoise adjusted to {denoise_strength}")
+                            if denoise_strength == 0.01:
+                                steps = steps
+                                print(f"steps not adjusted")
+                            elif denoise_strength != 0.01:
+                                steps = steps * 2
+
                             if (steps > 1000) and (
                                 sched_name == "DPMSM" or "DPMSS" or "DEIS"
                             ):
@@ -260,7 +268,8 @@ def run_diffusers(
                 short_prompt[:64] if len(short_prompt) > 64 else short_prompt
             )
 
-            if colortransfer is True:
+            # unsure how to apply for batches. only works for non-batches.
+            if colortransfer is True and loopback is True:
                 print("applying colour transfer")
                 init_image_array = np.array(init_image)
                 loopback_image_array = np.array(batch_images[0])
@@ -268,51 +277,57 @@ def run_diffusers(
                     loopback_image_array, init_image_array
                 )
                 loopback_image = Image.fromarray(loopback_image_transfer)
-            elif colortransfer is False:
+            elif colortransfer is False and loopback is True:
                 loopback_image = batch_images[0]
+            elif colortransfer is True and loopback is False:
+                print("applying colour transfer")
+                init_image_array = np.array(init_image)
+                loopback_image_array = np.array(batch_images[0])
+                loopback_image_transfer = colortrans.transfer_lhm(
+                    loopback_image_array, init_image_array
+                )
+                loopback_image = Image.fromarray(loopback_image_transfer)
 
             if loopback is True:
                 # png output
                 if image_format == "png":
-                    for j in range(batch_size):
-                        loopback_image.save(
-                            os.path.join(
-                                output_path,
-                                f"{next_index + i:06}-"
-                                f"{j:02}."
-                                f"{short_prompt}_"
-                                f"{seeds[i]}_"
-                                f"{guidance_scale}g_"
-                                f"{width}x"
-                                f"{height}_"
-                                f"{steps}s_"
-                                f"{sched_short_name}."
-                                f"{image_format}",
-                            ),
-                            optimize=True,
-                        )
+                    loopback_image.save(
+                        os.path.join(
+                            output_path,
+                            f"{next_index + i:06}-"
+                            f"00."
+                            f"{short_prompt}_"
+                            f"{seeds[i]}_"
+                            f"{guidance_scale}g_"
+                            f"{width}x"
+                            f"{height}_"
+                            f"{steps}s_"
+                            f"{sched_short_name}."
+                            f"{image_format}",
+                        ),
+                        optimize=True,
+                    )
                 # jpg output
                 elif image_format == "jpg":
-                    for j in range(batch_size):
-                        loopback_image.save(
-                            os.path.join(
-                                output_path,
-                                f"{next_index + i:06}-"
-                                f"{j:02}."
-                                f"{short_prompt}_"
-                                f"{seeds[i]}_"
-                                f"{guidance_scale}g_"
-                                f"{width}x"
-                                f"{height}_"
-                                f"{steps}s_"
-                                f"{sched_short_name}."
-                                f"{image_format}",
-                            ),
-                            quality=95,
-                            subsampling=0,
-                            optimize=True,
-                            progressive=True,
-                        )
+                    loopback_image.save(
+                        os.path.join(
+                            output_path,
+                            f"{next_index + i:06}-"
+                            f"00."
+                            f"{short_prompt}_"
+                            f"{seeds[i]}_"
+                            f"{guidance_scale}g_"
+                            f"{width}x"
+                            f"{height}_"
+                            f"{steps}s_"
+                            f"{sched_short_name}."
+                            f"{image_format}",
+                        ),
+                        quality=95,
+                        subsampling=0,
+                        optimize=True,
+                        progressive=True,
+                    )
             elif loopback is False:
                 # png output
                 if image_format == "png":
@@ -631,6 +646,72 @@ def resize_and_crop(input_image: PIL.Image.Image, height: int, width: int):
         bottom = top + height
         input_image = input_image.crop((0, top, width, bottom))
     return input_image
+
+
+def tagger_predict(image, score_threshold):
+    # tagger_model_path = "deepdanbooru.onnx"
+    tagger_model_path = hf_hub_download(
+        repo_id="skytnt/deepdanbooru_onnx", filename="deepdanbooru.onnx"
+    )
+    eprovider = "CPUExecutionProvider"
+    # eprovider="DmlExecutionProvider"
+    tagger_model = ort.InferenceSession(
+        tagger_model_path, providers=[eprovider]
+    )
+    tagger_model_meta = tagger_model.get_modelmeta().custom_metadata_map
+    tagger_tags = eval(tagger_model_meta["tags"])
+    s = 512
+    h, w = image.shape[:-1]
+    h, w = (s, int(s * w / h)) if h > w else (int(s * h / w), s)
+    ph, pw = s - h, s - w
+    image = cv2.resize(image, (w, h), interpolation=cv2.INTER_AREA)
+    image = cv2.copyMakeBorder(
+        image,
+        ph // 2,
+        ph - ph // 2,
+        pw // 2,
+        pw - pw // 2,
+        cv2.BORDER_REPLICATE,
+    )
+    image = image.astype(np.float32) / 255
+    image = image[np.newaxis, :]
+    probs = tagger_model.run(None, {"input_1": image})[0][0]
+    probs = probs.astype(np.float32)
+    tags = []
+    probabilities = []
+    for prob, label in zip(probs.tolist(), tagger_tags):
+        if prob < score_threshold:
+            continue
+        tags.append(label)
+        probabilities.append(prob)
+    del tagger_model
+    del tagger_model_meta
+    del tagger_tags
+    gc.collect()
+    return tags, probabilities
+
+
+def danbooru_click(extras_image):
+    img = cv2.cvtColor(np.array(extras_image), cv2.COLOR_RGB2BGR)
+    img = img[:, :, ::-1].copy()
+    dh, dw = img.shape[:-1]
+    tags, probs = tagger_predict(img, 0.5)
+    newprompt = ""
+    for x in tags:
+        if not "rating" in x:
+            newprompt += x + ", "
+    newprompt = newprompt.strip(", ")
+    repdict = {"\\": "\\\\", "(": "\\(", ")": "\\)"}
+    for key, value in repdict.items():
+        newprompt = newprompt.replace(key, value)
+    print(newprompt)
+    global current_tab
+    if current_tab == 0:
+        return {danbooru_prompt: newprompt}
+    elif current_tab == 1:
+        return {danbooru_prompt: newprompt}
+    elif current_tab == 2:
+        return {danbooru_prompt: newprompt}
 
 
 def clear_click():
@@ -1280,11 +1361,13 @@ def make_video2(video: bool):
     else:
         return gr.update(interactive=True)
 
-def make_loopback(loopback:bool):
+
+def make_loopback(loopback: bool):
     if loopback is True:
         return gr.update(interactive=True)
     else:
         return gr.update(interactive=False)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -1523,12 +1606,13 @@ if __name__ == "__main__":
                             value=False, label="loopback (use iteration count)"
                         )
                         loopback_halving_t1 = gr.Checkbox(
-                            value=False, label="halve denoise each "
-                                               "loopback", interactive=False
+                            value=False,
+                            label="halve denoise each " "loopback",
+                            interactive=False,
                         )
                         colortransfer_t1 = gr.Checkbox(
-                            value=True, label="lhm colour transfer from "
-                                               "base"
+                            value=True,
+                            label="lhm colour transfer from " "base",
                         )
                     steps_t1 = gr.Slider(
                         1, 300, value=16, step=1, label="steps"
@@ -1667,6 +1751,15 @@ if __name__ == "__main__":
             with gr.Column(scale=11, min_width=550):
                 image_out = gr.Gallery(value=None, label="output images")
                 status_out = gr.Textbox(value="", label="status")
+                extras_image = gr.Image(
+                    label="input image", type="pil", elem_id="image_extras"
+                )
+                danbooru_btn = gr.Button(
+                    "Deepdanbooru", elem_id="deepdb_button"
+                )
+                danbooru_prompt = gr.Textbox(
+                    value="", lines=2, label="danbooru prompt result"
+                )
 
         # config components
         tab0_inputs = [
@@ -1734,6 +1827,9 @@ if __name__ == "__main__":
         all_inputs.extend(tab0_inputs)
         all_inputs.extend(tab1_inputs)
         all_inputs.extend(tab2_inputs)
+        danbooru_btn.click(
+            fn=danbooru_click, inputs=[extras_image], outputs=danbooru_prompt
+        )
 
         clear_btn.click(
             fn=clear_click, inputs=None, outputs=all_inputs, queue=False
@@ -1818,8 +1914,10 @@ if __name__ == "__main__":
 
         # loopback
         loopback_t1.change(
-            fn=make_loopback, inputs=loopback_t1,
-            outputs=loopback_halving_t1, queue=False
+            fn=make_loopback,
+            inputs=loopback_t1,
+            outputs=loopback_halving_t1,
+            queue=False,
         )
 
         image_out.style(grid=2)
