@@ -1,3 +1,7 @@
+# xzuyn fork
+
+don't expect everything to work. this is my fork for testing/sharing my WIP stuff before it gets refined for a push to the main repo.
+
 # OnnxDiffusersUI
 
 I’ve been helping people setup Stable Diffusion and run it on their AMD graphics card (or CPU) on Windows. I’ve also wrote a basic UI for the diffusers library version to make it more user friendly. This guide is a consolidation of what I’ve learned and hopefully will help other people setup their PC to run Stable Diffusion too.
