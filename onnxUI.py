@@ -126,48 +126,28 @@ def run_diffusers(
         for i in range(iteration_count):
             print(f"iteration {i + 1}/{iteration_count}")
 
-            if loopback is True:
-                info = (
-                    f"{next_index + i:06} | "
-                    f"prompt: {prompt} "
-                    f"negative prompt: {neg_prompt} | "
-                    f"scheduler: {sched_name} "
-                    f"model: {model_name} "
-                    f"iteration size: {iteration_count} "
-                    f"batch size: {batch_size} "
-                    f"steps: {steps} "
-                    f"scale: {guidance_scale} "
-                    f"width: {width} "
-                    f"height: {height} "
-                    f"eta: {eta} "
-                    f"seed: {seeds[0]}"
-                )
-            elif loopback is False:
-                info = (
-                    f"{next_index + i:06} | "
-                    f"prompt: {prompt} "
-                    f"negative prompt: {neg_prompt} | "
-                    f"scheduler: {sched_name} "
-                    f"model: {model_name} "
-                    f"iteration size: {iteration_count} "
-                    f"batch size: {batch_size} "
-                    f"steps: {steps} "
-                    f"scale: {guidance_scale} "
-                    f"width: {width} "
-                    f"height: {height} "
-                    f"eta: {eta} "
-                    f"seed: {seeds[i]}"
-                )
+            info = (
+                f"{next_index + i:06} | "
+                f"prompt: {prompt} "
+                f"negative prompt: {neg_prompt} | "
+                f"scheduler: {sched_name} "
+                f"model: {model_name} "
+                f"iteration size: {iteration_count} "
+                f"batch size: {batch_size} "
+                f"steps: {steps} "
+                f"scale: {guidance_scale} "
+                f"width: {width} "
+                f"height: {height} "
+                f"eta: {eta} "
+                f"seed: {seeds[i]}"
+            )
             if current_pipe == "img2img":
                 info = info + f" denoise: {denoise_strength}"
             with open(os.path.join(output_path, "history.txt"), "a") as log:
                 log.write(info + "\n")
 
             # create generator object from seed
-            if loopback is True:
-                rng = np.random.RandomState(seeds[0])
-            elif loopback is False:
-                rng = np.random.RandomState(seeds[i])
+            rng = np.random.RandomState(seeds[i])
 
             if current_pipe == "txt2img":
                 start = time.time()
@@ -282,7 +262,7 @@ def run_diffusers(
                                 f"{next_index + i:06}-"
                                 f"{j:02}."
                                 f"{short_prompt}_"
-                                f"{seeds[0]}_"
+                                f"{seeds[i]}_"
                                 f"{guidance_scale}g_"
                                 f"{width}x"
                                 f"{height}_"
@@ -301,7 +281,7 @@ def run_diffusers(
                                 f"{next_index + i:06}-"
                                 f"{j:02}."
                                 f"{short_prompt}_"
-                                f"{seeds[0]}_"
+                                f"{seeds[i]}_"
                                 f"{guidance_scale}g_"
                                 f"{width}x"
                                 f"{height}_"
@@ -521,24 +501,14 @@ def run_diffusers(
 
     time_taken = time_taken / 60.0
     if iteration_count > 1 or video is True:
-        if loopback is True:
-            status = (
-                f"Run indexes {next_index:06} "
-                f"to {next_index + iteration_count - 1:06} "
-                f"took {time_taken:.1f} minutes "
-                f"to generate {iteration_count} "
-                f"iterations with batch size of {batch_size}. "
-                f"seed: {seeds[0]}"
-            )
-        elif loopback is False:
-            status = (
-                f"Run indexes {next_index:06} "
-                f"to {next_index + iteration_count - 1:06} "
-                f"took {time_taken:.1f} minutes "
-                f"to generate {iteration_count} "
-                f"iterations with batch size of {batch_size}. "
-                f"seeds: " + np.array2string(seeds, separator=",")
-            )
+        status = (
+            f"Run indexes {next_index:06} "
+            f"to {next_index + iteration_count - 1:06} "
+            f"took {time_taken:.1f} minutes "
+            f"to generate {iteration_count} "
+            f"iterations with batch size of {batch_size}. "
+            f"seeds: " + np.array2string(seeds, separator=",")
+        )
     else:
         status = (
             f"Run index {next_index:06} "
