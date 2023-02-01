@@ -1052,7 +1052,7 @@ def generate_click(
                         scheduler=scheduler,
                         text_encoder=cputextenc,
                         vae_decoder=cpuvaedec,
-                        vae_encoder=cpuvaeenc
+                        vae_encoder=cpuvaeenc,
                     )
                 elif textenc_on_cpu:
                     print("Using CPU Text Encoder")
