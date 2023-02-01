@@ -49,6 +49,7 @@ def run_diffusers(
     laststep: int,
     loopback: bool,
     loopback_halving: bool,
+    colortransfer: bool,
 ) -> Tuple[list, str]:
     global model_name
     global current_pipe
@@ -259,14 +260,18 @@ def run_diffusers(
                 short_prompt[:64] if len(short_prompt) > 64 else short_prompt
             )
 
-            if loopback is True:
+            if colortransfer is True:
+                print("applying colour transfer")
                 init_image_array = np.array(init_image)
                 loopback_image_array = np.array(batch_images[0])
                 loopback_image_transfer = colortrans.transfer_lhm(
                     loopback_image_array, init_image_array
                 )
                 loopback_image = Image.fromarray(loopback_image_transfer)
+            elif colortransfer is False:
+                loopback_image = batch_images[0]
 
+            if loopback is True:
                 # png output
                 if image_format == "png":
                     for j in range(batch_size):
@@ -671,6 +676,7 @@ def clear_click():
             laststep_t1: 32,
             loopback_t1: False,
             loopback_halving_t1: False,
+            colortransfer_t1: True,
         }
     elif current_tab == 2:
         return {
@@ -733,6 +739,7 @@ def generate_click(
     laststep_t1,
     loopback_t1,
     loopback_halving_t1,
+    colortransfer_t1,
     prompt_t2,
     neg_prompt_t2,
     sch_t2,
@@ -1117,6 +1124,7 @@ def generate_click(
             laststep_t0,
             False,
             False,
+            False,
         )
     elif current_tab == 1:
         # input image resizing
@@ -1178,6 +1186,7 @@ def generate_click(
             laststep_t1,
             loopback_t1,
             loopback_halving_t1,
+            colortransfer_t1,
         )
     elif current_tab == 2:
         input_image = image_t2["image"].convert("RGB")
@@ -1226,6 +1235,7 @@ def generate_click(
             laststep_t2,
             False,
             False,
+            False,
         )
 
     if release_memory_after_generation:
@@ -1270,6 +1280,11 @@ def make_video2(video: bool):
     else:
         return gr.update(interactive=True)
 
+def make_loopback(loopback:bool):
+    if loopback is True:
+        return gr.update(interactive=True)
+    else:
+        return gr.update(interactive=False)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -1508,7 +1523,12 @@ if __name__ == "__main__":
                             value=False, label="loopback (use iteration count)"
                         )
                         loopback_halving_t1 = gr.Checkbox(
-                            value=False, label="halve denoise each loopback"
+                            value=False, label="halve denoise each "
+                                               "loopback", interactive=False
+                        )
+                        colortransfer_t1 = gr.Checkbox(
+                            value=True, label="lhm colour transfer from "
+                                               "base"
                         )
                     steps_t1 = gr.Slider(
                         1, 300, value=16, step=1, label="steps"
@@ -1688,6 +1708,7 @@ if __name__ == "__main__":
             laststep_t1,
             loopback_t1,
             loopback_halving_t1,
+            colortransfer_t1,
         ]
         tab2_inputs = [
             prompt_t2,
@@ -1793,6 +1814,12 @@ if __name__ == "__main__":
         )
         video_t2.change(
             fn=make_video2, inputs=video_t2, outputs=batch_t2, queue=False
+        )
+
+        # loopback
+        loopback_t1.change(
+            fn=make_loopback, inputs=loopback_t1,
+            outputs=loopback_halving_t1, queue=False
         )
 
         image_out.style(grid=2)
