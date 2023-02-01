@@ -48,6 +48,7 @@ def run_diffusers(
     firststep: int,
     laststep: int,
     loopback: bool,
+    loopback_halving: bool,
 ) -> Tuple[list, str]:
     global model_name
     global current_pipe
@@ -173,6 +174,19 @@ def run_diffusers(
                         loopback_image = None
 
                     if loopback_image is not None:
+                        if loopback_halving is True:
+                            denoise_strength = denoise_strength * 0.5
+                            steps = steps * 2
+                            print(f"denoise adjusted to {denoise_strength}")
+                            if denoise_strength < 0.01:
+                                denoise_strength = 0.01
+                                print("limited denoise to 0.01")
+                            if (steps > 1000) and (
+                                sched_name == "DPMSM" or "DPMSS" or "DEIS"
+                            ):
+                                steps = 1000
+                                print("limited steps to 1000")
+
                         batch_images = pipe(
                             prompt,
                             negative_prompt=neg_prompt,
@@ -656,6 +670,7 @@ def clear_click():
             firststep_t1: 1,
             laststep_t1: 32,
             loopback_t1: False,
+            loopback_halving_t1: False,
         }
     elif current_tab == 2:
         return {
@@ -717,6 +732,7 @@ def generate_click(
     firststep_t1,
     laststep_t1,
     loopback_t1,
+    loopback_halving_t1,
     prompt_t2,
     neg_prompt_t2,
     sch_t2,
@@ -1100,6 +1116,7 @@ def generate_click(
             firststep_t0,
             laststep_t0,
             False,
+            False,
         )
     elif current_tab == 1:
         # input image resizing
@@ -1160,6 +1177,7 @@ def generate_click(
             firststep_t1,
             laststep_t1,
             loopback_t1,
+            loopback_halving_t1,
         )
     elif current_tab == 2:
         input_image = image_t2["image"].convert("RGB")
@@ -1206,6 +1224,7 @@ def generate_click(
             fps_t2,
             firststep_t2,
             laststep_t2,
+            False,
             False,
         )
 
@@ -1488,6 +1507,9 @@ if __name__ == "__main__":
                         loopback_t1 = gr.Checkbox(
                             value=False, label="loopback (use iteration count)"
                         )
+                        loopback_halving_t1 = gr.Checkbox(
+                            value=False, label="halve denoise each loopback"
+                        )
                     steps_t1 = gr.Slider(
                         1, 300, value=16, step=1, label="steps"
                     )
@@ -1665,6 +1687,7 @@ if __name__ == "__main__":
             firststep_t1,
             laststep_t1,
             loopback_t1,
+            loopback_halving_t1,
         ]
         tab2_inputs = [
             prompt_t2,
