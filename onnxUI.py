@@ -427,7 +427,7 @@ def run_diffusers(
                 # adjust steps to account for denoise
                 step_old = step
                 step = ceil(steps / denoise)
-                if step > 1000 and sch_t1 == "DPMSM" or "DPMSS" or "DEIS":
+                if step > 1000 and (sch_t1 == "DPMSM" or "DPMSS" or "DEIS"):
                     step_unreduced = step
                     steps = 1000
                     print()
@@ -1185,7 +1185,7 @@ def generate_click(
         # adjust steps to account for denoise
         steps_t1_old = steps_t1
         steps_t1 = ceil(steps_t1 / denoise_t1)
-        if steps_t1 > 1000 and sch_t1 == "DPMSM" or "DPMSS" or "DEIS":
+        if steps_t1 > 1000 and (sch_t1 == "DPMSM" or "DPMSS" or "DEIS"):
             steps_t1_unreduced = steps_t1
             steps_t1 = 1000
             print()
