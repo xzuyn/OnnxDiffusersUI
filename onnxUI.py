@@ -124,7 +124,7 @@ def run_diffusers(
     if video is False:
         for i in range(iteration_count):
             print(f"iteration {i + 1}/{iteration_count}")
-            
+
             if loopback is True:
                 info = (
                     f"{next_index + i:06} | "
@@ -427,7 +427,7 @@ def run_diffusers(
                 # adjust steps to account for denoise
                 step_old = step
                 step = ceil(steps / denoise)
-                if step > 1000 and sch_t1 == "DPMSM":
+                if step > 1000 and sch_t1 == "DPMSM" or "DEIS":
                     step_unreduced = step
                     steps = 1000
                     print()
@@ -441,7 +441,8 @@ def run_diffusers(
                     )
                     print()
                     print(
-                        f"INTERNAL STEP COUNT EXCEEDS 1000 MAX FOR DPMSM. "
+                        f"INTERNAL STEP COUNT EXCEEDS 1000 MAX FOR DPMSM or "
+                        f"DEIS. "
                         f"INTERNAL STEPS WILL BE REDUCED TO 1000."
                     )
                     print()
@@ -1184,7 +1185,7 @@ def generate_click(
         # adjust steps to account for denoise
         steps_t1_old = steps_t1
         steps_t1 = ceil(steps_t1 / denoise_t1)
-        if steps_t1 > 1000 and sch_t1 == "DPMSM":
+        if steps_t1 > 1000 and sch_t1 == "DPMSM" or "DEIS":
             steps_t1_unreduced = steps_t1
             steps_t1 = 1000
             print()
@@ -1198,7 +1199,7 @@ def generate_click(
             )
             print()
             print(
-                f"INTERNAL STEP COUNT EXCEEDS 1000 MAX FOR DPMSM. "
+                f"INTERNAL STEP COUNT EXCEEDS 1000 MAX FOR DPMSM or DEIS. "
                 f"INTERNAL STEPS WILL BE REDUCED TO 1000."
             )
             print()
