@@ -50,7 +50,6 @@ def run_diffusers(
     global model_name
     global current_pipe
     global pipe
-    global total_image_count
 
     prompt.strip("\n")
     neg_prompt.strip("\n")
@@ -351,7 +350,7 @@ def run_diffusers(
                         )
             images.extend(batch_images)
             time_taken = time_taken + (finish - start)
-    else:
+    elif video is True:
         if firststep > laststep:
             step_direction = -1
             ffmpeg_start = laststep
@@ -363,7 +362,9 @@ def run_diffusers(
         for step in range(
             firststep, (laststep + step_direction), step_direction
         ):
-            print(f"step {step}/{laststep} for video frames")
+            print(
+                f"step {step}/{laststep} for video frames"
+            )
 
             short_prompt = prompt.strip('<>:"/\\|?*\n\t')
             short_prompt = re.sub(r'[\\/*?:"<>|\n\t]', "", short_prompt)
@@ -384,8 +385,17 @@ def run_diffusers(
             )
             os.makedirs(frames_path, exist_ok=True)
 
+            try:
+                image_number
+
+            except UnboundLocalError:
+                image_number = None
+
+            if image_number is None:
+                image_number = 1
+
             info = (
-                f"{next_index + step:06} | "
+                f"{next_index + image_number:06} | "
                 f"prompt: {prompt} "
                 f"negative prompt: {neg_prompt} | "
                 f"scheduler: {sched_name} "
@@ -423,41 +433,6 @@ def run_diffusers(
                 finish = time.time()
             elif current_pipe == "img2img":
                 start = time.time()
-
-                # adjust steps to account for denoise
-                step_old = step
-                step = ceil(steps / denoise_strength)
-                if step > 1000 and (sch_t1 == "DPMSM" or "DPMSS" or "DEIS"):
-                    step_unreduced = step
-                    steps = 1000
-                    print()
-                    print(
-                        f"Adjusting steps to account for denoise. From "
-                        f"{step_old} to {step_unreduced} steps internally."
-                    )
-                    print(
-                        f"Without adjustment the actual step count would be "
-                        f"~{ceil(step_old * denoise_strength)} steps."
-                    )
-                    print()
-                    print(
-                        f"INTERNAL STEP COUNT EXCEEDS 1000 MAX FOR DPMSM, "
-                        f"DPMSS or DEIS. INTERNAL STEPS WILL BE REDUCED TO "
-                        f"1000."
-                    )
-                    print()
-                else:
-                    print()
-                    print(
-                        f"Adjusting steps to account for denoise. From "
-                        f"{step_old} to {step} steps internally."
-                    )
-                    print(
-                        f"Without adjustment the actual step count would be "
-                        f"~{ceil(step_old * denoise_strength)} steps."
-                    )
-                    print()
-
                 batch_images = pipe(
                     prompt,
                     negative_prompt=neg_prompt,
@@ -472,49 +447,19 @@ def run_diffusers(
                 finish = time.time()
             elif current_pipe == "inpaint":
                 start = time.time()
-                if legacy is True:
-                    # adjust steps to account for legacy inpaint only using ~80% of set steps
-                    step_old = step
-                    if step < 5:
-                        step = step + 1
-                    elif step >= 5:
-                        step = int((step / 0.7989) + 1)
-                    print()
-                    print(
-                        f"Adjusting steps for legacy inpaint. From "
-                        f"{step_old} to {step} internally."
-                    )
-                    print(
-                        f"Without adjustment the actual step count would be "
-                        f"~{int(step_old * 0.8)} steps."
-                    )
-                    print()
-
-                    batch_images = pipe(
-                        prompt,
-                        negative_prompt=neg_prompt,
-                        image=init_image,
-                        mask_image=init_mask,
-                        num_inference_steps=step,
-                        guidance_scale=guidance_scale,
-                        eta=eta,
-                        num_images_per_prompt=batch_size,
-                        generator=rng,
-                    ).images
-                else:
-                    batch_images = pipe(
-                        prompt,
-                        negative_prompt=neg_prompt,
-                        image=init_image,
-                        mask_image=init_mask,
-                        height=height,
-                        width=width,
-                        num_inference_steps=step,
-                        guidance_scale=guidance_scale,
-                        eta=eta,
-                        num_images_per_prompt=batch_size,
-                        generator=rng,
-                    ).images
+                batch_images = pipe(
+                    prompt,
+                    negative_prompt=neg_prompt,
+                    image=init_image,
+                    mask_image=init_mask,
+                    height=height,
+                    width=width,
+                    num_inference_steps=step,
+                    guidance_scale=guidance_scale,
+                    eta=eta,
+                    num_images_per_prompt=batch_size,
+                    generator=rng,
+                ).images
                 finish = time.time()
 
             short_prompt = prompt.strip('<>:"/\\|?*\n\t')
@@ -529,7 +474,7 @@ def run_diffusers(
                     batch_images[j].save(
                         os.path.join(
                             frames_path,
-                            f"{next_index + step:06}-"
+                            f"{next_index + image_number:06}-"
                             f"{j:02}."
                             f"{short_prompt}_"
                             f"{seed}_"
@@ -541,13 +486,14 @@ def run_diffusers(
                         ),
                         optimize=True,
                     )
+                    image_number = image_number + 1
             # jpg output
             elif image_format == "jpg":
                 for j in range(batch_size):
                     batch_images[j].save(
                         os.path.join(
                             frames_path,
-                            f"{next_index + step:06}-"
+                            f"{next_index + image_number:06}-"
                             f"{j:02}."
                             f"{short_prompt}_"
                             f"{seed}_"
@@ -562,6 +508,7 @@ def run_diffusers(
                         optimize=True,
                         progressive=True,
                     )
+                    image_number = image_number + 1
 
             images.extend(batch_images)
             time_taken = time_taken + (finish - start)
@@ -1186,7 +1133,7 @@ def generate_click(
         # adjust steps to account for denoise
         steps_t1_old = steps_t1
         steps_t1 = ceil(steps_t1 / denoise_t1)
-        if steps_t1 > 1000 and (sch_t1 == "DPMSM" or "DPMSS" or "DEIS"):
+        if (steps_t1 > 1000) and (sch_t1 == "DPMSM" or "DPMSS" or "DEIS"):
             steps_t1_unreduced = steps_t1
             steps_t1 = 1000
             print()
@@ -1558,11 +1505,12 @@ if __name__ == "__main__":
                         iter_t1 = gr.Slider(
                             1, 300, value=1, step=1, label="iteration count"
                         )
-                        loopback_t1 = gr.Checkbox(
-                            value=False, label="loopback (use iteration count)"
-                        )
                         batch_t1 = gr.Slider(
                             1, 4, value=1, step=1, label="batch size"
+                        )
+                    with gr.Row():
+                        loopback_t1 = gr.Checkbox(
+                            value=False, label="loopback (use iteration count)"
                         )
                     steps_t1 = gr.Slider(
                         1, 300, value=16, step=1, label="steps"
