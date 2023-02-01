@@ -4,6 +4,7 @@ import gc
 import os
 import re
 import time
+import colortrans
 from typing import Optional, Tuple
 from math import ceil
 
@@ -20,6 +21,7 @@ import gradio as gr
 import numpy as np
 from packaging import version
 import PIL
+from PIL import Image
 
 import lpw_pipe
 
@@ -264,11 +266,17 @@ def run_diffusers(
             )
 
             if loopback is True:
-                loopback_image = batch_images
+                init_image_array = np.array(init_image)
+                loopback_image_array = np.array(batch_images[0])
+                loopback_image_transfer = colortrans.transfer_lhm(
+                    loopback_image_array, init_image_array
+                )
+                loopback_image = Image.fromarray(loopback_image_transfer)
+
                 # png output
                 if image_format == "png":
                     for j in range(batch_size):
-                        batch_images[j].save(
+                        loopback_image.save(
                             os.path.join(
                                 output_path,
                                 f"{next_index + i:06}-"
@@ -287,7 +295,7 @@ def run_diffusers(
                 # jpg output
                 elif image_format == "jpg":
                     for j in range(batch_size):
-                        batch_images[j].save(
+                        loopback_image.save(
                             os.path.join(
                                 output_path,
                                 f"{next_index + i:06}-"
@@ -362,9 +370,7 @@ def run_diffusers(
         for step in range(
             firststep, (laststep + step_direction), step_direction
         ):
-            print(
-                f"step {step}/{laststep} for video frames"
-            )
+            print(f"step {step}/{laststep} for video frames")
 
             short_prompt = prompt.strip('<>:"/\\|?*\n\t')
             short_prompt = re.sub(r'[\\/*?:"<>|\n\t]', "", short_prompt)
