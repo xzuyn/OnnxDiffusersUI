@@ -781,6 +781,7 @@ def clear_click():
             loopback_t1: False,
             loopback_halving_t1: False,
             colortransfer_t1: True,
+            transfer_methods_t1: "lhm",
         }
     elif current_tab == 2:
         return {
