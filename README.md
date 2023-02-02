@@ -11,6 +11,9 @@ The intent of this UI is to get people started running Stable Diffusion on Windo
 Example screenshot:  
 ![example screenshot using waifu diffusion model](images/Screenshot2.png)
 
+Example img2img loopback (first image is the input, then loopbacked at 0.25 denoise [16 step DEIS]):
+![example screenshot using img2img loopback](images/none%20Chart.jpg)
+
 ## Credits
 
 A lot of this document is based on other guides. I've listed them below:
