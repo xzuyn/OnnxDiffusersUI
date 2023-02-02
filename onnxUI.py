@@ -53,6 +53,7 @@ def run_diffusers(
     loopback: bool,
     loopback_halving: bool,
     colortransfer: bool,
+    transfer_methods: str,
 ) -> Tuple[list, str]:
     global model_name
     global current_pipe
@@ -273,9 +274,20 @@ def run_diffusers(
                 print("applying colour transfer")
                 init_image_array = np.array(init_image)
                 loopback_image_array = np.array(batch_images[0])
-                loopback_image_transfer = colortrans.transfer_lhm(
-                    loopback_image_array, init_image_array
-                )
+
+                if transfer_methods == "lhm":
+                    loopback_image_transfer = colortrans.transfer_lhm(
+                        loopback_image_array, init_image_array
+                    )
+                if transfer_methods == "reinhard":
+                    loopback_image_transfer = colortrans.transfer_reinhard(
+                        loopback_image_array, init_image_array
+                    )
+                if transfer_methods == "pccm":
+                    loopback_image_transfer = colortrans.transfer_pccm(
+                        loopback_image_array, init_image_array
+                    )
+
                 loopback_image = Image.fromarray(loopback_image_transfer)
             elif colortransfer is False and loopback is True:
                 loopback_image = batch_images[0]
@@ -283,9 +295,20 @@ def run_diffusers(
                 print("applying colour transfer")
                 init_image_array = np.array(init_image)
                 loopback_image_array = np.array(batch_images[0])
-                loopback_image_transfer = colortrans.transfer_lhm(
-                    loopback_image_array, init_image_array
-                )
+
+                if transfer_methods == "lhm":
+                    loopback_image_transfer = colortrans.transfer_lhm(
+                        loopback_image_array, init_image_array
+                    )
+                if transfer_methods == "reinhard":
+                    loopback_image_transfer = colortrans.transfer_reinhard(
+                        loopback_image_array, init_image_array
+                    )
+                if transfer_methods == "pccm":
+                    loopback_image_transfer = colortrans.transfer_pccm(
+                        loopback_image_array, init_image_array
+                    )
+
                 loopback_image = Image.fromarray(loopback_image_transfer)
 
             if loopback is True:
@@ -821,6 +844,7 @@ def generate_click(
     loopback_t1,
     loopback_halving_t1,
     colortransfer_t1,
+    transfer_methods_t1,
     prompt_t2,
     neg_prompt_t2,
     sch_t2,
@@ -1206,6 +1230,7 @@ def generate_click(
             False,
             False,
             False,
+            transfer_methods_t1,
         )
     elif current_tab == 1:
         # input image resizing
@@ -1268,6 +1293,7 @@ def generate_click(
             loopback_t1,
             loopback_halving_t1,
             colortransfer_t1,
+            transfer_methods_t1,
         )
     elif current_tab == 2:
         input_image = image_t2["image"].convert("RGB")
@@ -1317,6 +1343,7 @@ def generate_click(
             False,
             False,
             False,
+            transfer_methods_t1,
         )
 
     if release_memory_after_generation:
@@ -1492,6 +1519,8 @@ if __name__ == "__main__":
     else:
         sched_list = ["DDIM", "LMS", "PNDM"]
 
+    transfer_methods_list = ["lhm", "reinhard", "pccm"]
+
     # create gradio block
     title = "Stable Diffusion ONNX"
     with gr.Blocks(title=title, css=custom_css) as demo:
@@ -1610,9 +1639,14 @@ if __name__ == "__main__":
                             label="halve denoise each " "loopback",
                             interactive=False,
                         )
+                    with gr.Row():
                         colortransfer_t1 = gr.Checkbox(
                             value=True,
-                            label="lhm colour transfer from " "base",
+                            label="colour transfer from base",
+                        )
+                        transfer_methods_t1 = gr.Radio(
+                            transfer_methods_list, value="lhm",
+                            label="colour transfer method"
                         )
                     steps_t1 = gr.Slider(
                         1, 300, value=16, step=1, label="steps"
@@ -1802,6 +1836,7 @@ if __name__ == "__main__":
             loopback_t1,
             loopback_halving_t1,
             colortransfer_t1,
+            transfer_methods_t1
         ]
         tab2_inputs = [
             prompt_t2,
