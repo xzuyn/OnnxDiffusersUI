@@ -763,7 +763,7 @@ def clip_interrogator_click(extras_image):
     ci_vitl.clip_model = ci_vitl.clip_model.to("cpu")
     ci = ci_vitl
 
-    newprompt = ci.interrogate_classic(extras_image)
+    newprompt = ci.interrogate(extras_image)
     print(newprompt)
     gc.collect()
     if current_tab == 0:
@@ -785,7 +785,7 @@ def clip_interrogator_negative_click(extras_image):
     ci_vitl.clip_model = ci_vitl.clip_model.to("cpu")
     ci = ci_vitl
 
-    newnegativeprompt = ci.interrogate_classic(extras_image)
+    newnegativeprompt = ci.interrogate_negative(extras_image)
     print(newnegativeprompt)
     gc.collect()
     if current_tab == 0:
