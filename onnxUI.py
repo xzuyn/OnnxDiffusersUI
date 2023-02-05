@@ -753,14 +753,18 @@ def danbooru_click(extras_image):
 
 
 def clip_interrogator_click(extras_image):
+    global current_tab
     config = Config(clip_model_path="cache",
-                    clip_model_name="ViT-L-14/openai")
+                    clip_model_name="ViT-L-14/openai",
+                    download_cache=False,
+                    chunk_size=384,
+                    blip_image_eval_size=512)
     ci_vitl = Interrogator(config)
     ci_vitl.clip_model = ci_vitl.clip_model.to("cpu")
     ci = ci_vitl
-    newprompt = ci.interrogate(extras_image)
+
+    newprompt = ci.interrogate_classic(extras_image)
     print(newprompt)
-    global current_tab
     gc.collect()
     if current_tab == 0:
         return {interrogate_prompt: newprompt}
@@ -768,6 +772,28 @@ def clip_interrogator_click(extras_image):
         return {interrogate_prompt: newprompt}
     elif current_tab == 2:
         return {interrogate_prompt: newprompt}
+
+
+def clip_interrogator_negative_click(extras_image):
+    global current_tab
+    config = Config(clip_model_path="cache",
+                    clip_model_name="ViT-L-14/openai",
+                    download_cache=False,
+                    chunk_size=384,
+                    blip_image_eval_size=512)
+    ci_vitl = Interrogator(config)
+    ci_vitl.clip_model = ci_vitl.clip_model.to("cpu")
+    ci = ci_vitl
+
+    newnegativeprompt = ci.interrogate_classic(extras_image)
+    print(newnegativeprompt)
+    gc.collect()
+    if current_tab == 0:
+        return {interrogate_negative_prompt: newnegativeprompt}
+    elif current_tab == 1:
+        return {interrogate_negative_prompt: newnegativeprompt}
+    elif current_tab == 2:
+        return {interrogate_negative_prompt: newnegativeprompt}
 
 
 def clear_click():
@@ -1841,8 +1867,16 @@ if __name__ == "__main__":
                     clip_interrogator_btn = gr.Button(
                         "CLIP Interrogate", elem_id="clip_interrogator_btn"
                     )
+                    clip_interrogator_negative_btn = gr.Button(
+                        "CLIP Interrogate Negative",
+                        elem_id="clip_interrogator_negative_btn"
+                    )
                 interrogate_prompt = gr.Textbox(
                     value="", lines=2, label="interrogate prompt result"
+                )
+                interrogate_negative_prompt = gr.Textbox(
+                    value="", lines=2, label="interrogate negative prompt "
+                                             "result"
                 )
 
         # config components
@@ -1922,6 +1956,11 @@ if __name__ == "__main__":
             fn=clip_interrogator_click,
             inputs=[extras_image],
             outputs=interrogate_prompt
+        )
+        clip_interrogator_negative_btn.click(
+            fn=clip_interrogator_negative_click,
+            inputs=[extras_image],
+            outputs=interrogate_negative_prompt
         )
 
         clear_btn.click(
