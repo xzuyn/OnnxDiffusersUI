@@ -6,6 +6,7 @@ import re
 import cv2
 import time
 import colortrans
+from clip_interrogator import Config, Interrogator
 import onnxruntime as ort
 from huggingface_hub import hf_hub_download
 from typing import Optional, Tuple
@@ -54,6 +55,7 @@ def run_diffusers(
     loopback_halving: bool,
     colortransfer: bool,
     transfer_methods: str,
+    transfer_amounts: str,
 ) -> Tuple[list, str]:
     global model_name
     global current_pipe
@@ -270,20 +272,26 @@ def run_diffusers(
             )
 
             # unsure how to apply for batches. only works for non-batches.
-            if colortransfer is True and loopback is True:
-                print("applying colour transfer")
+            if (
+                colortransfer is True
+                and loopback is True
+                and transfer_amounts == "each"
+            ):
                 init_image_array = np.array(init_image)
                 loopback_image_array = np.array(batch_images[0])
 
                 if transfer_methods == "lhm":
+                    print("applying lhm colour transfer")
                     loopback_image_transfer = colortrans.transfer_lhm(
                         loopback_image_array, init_image_array
                     )
                 if transfer_methods == "reinhard":
+                    print("applying reinhard colour transfer")
                     loopback_image_transfer = colortrans.transfer_reinhard(
                         loopback_image_array, init_image_array
                     )
                 if transfer_methods == "pccm":
+                    print("applying pccm colour transfer")
                     loopback_image_transfer = colortrans.transfer_pccm(
                         loopback_image_array, init_image_array
                     )
@@ -291,20 +299,27 @@ def run_diffusers(
                 loopback_image = Image.fromarray(loopback_image_transfer)
             elif colortransfer is False and loopback is True:
                 loopback_image = batch_images[0]
-            elif colortransfer is True and loopback is False:
+            elif (
+                colortransfer is True
+                and loopback is False
+                and transfer_amounts == "each"
+            ):
                 print("applying colour transfer")
                 init_image_array = np.array(init_image)
                 loopback_image_array = np.array(batch_images[0])
 
                 if transfer_methods == "lhm":
+                    print("applying lhm colour transfer")
                     loopback_image_transfer = colortrans.transfer_lhm(
                         loopback_image_array, init_image_array
                     )
                 if transfer_methods == "reinhard":
+                    print("applying reinhard colour transfer")
                     loopback_image_transfer = colortrans.transfer_reinhard(
                         loopback_image_array, init_image_array
                     )
                 if transfer_methods == "pccm":
+                    print("applying pccm colour transfer")
                     loopback_image_transfer = colortrans.transfer_pccm(
                         loopback_image_array, init_image_array
                     )
@@ -718,7 +733,7 @@ def danbooru_click(extras_image):
     img = cv2.cvtColor(np.array(extras_image), cv2.COLOR_RGB2BGR)
     img = img[:, :, ::-1].copy()
     dh, dw = img.shape[:-1]
-    tags, probs = tagger_predict(img, 0.5)
+    tags, probs = tagger_predict(img, 0.25)
     newprompt = ""
     for x in tags:
         if not "rating" in x:
@@ -730,11 +745,29 @@ def danbooru_click(extras_image):
     print(newprompt)
     global current_tab
     if current_tab == 0:
-        return {danbooru_prompt: newprompt}
+        return {interrogate_prompt: newprompt}
     elif current_tab == 1:
-        return {danbooru_prompt: newprompt}
+        return {interrogate_prompt: newprompt}
     elif current_tab == 2:
-        return {danbooru_prompt: newprompt}
+        return {interrogate_prompt: newprompt}
+
+
+def clip_interrogator_click(extras_image):
+    config = Config(clip_model_path="cache",
+                    clip_model_name="ViT-L-14/openai")
+    ci_vitl = Interrogator(config)
+    ci_vitl.clip_model = ci_vitl.clip_model.to("cpu")
+    ci = ci_vitl
+    newprompt = ci.interrogate(extras_image)
+    print(newprompt)
+    global current_tab
+    gc.collect()
+    if current_tab == 0:
+        return {interrogate_prompt: newprompt}
+    elif current_tab == 1:
+        return {interrogate_prompt: newprompt}
+    elif current_tab == 2:
+        return {interrogate_prompt: newprompt}
 
 
 def clear_click():
@@ -746,7 +779,7 @@ def clear_click():
             sch_t0: "DEIS",
             iter_t0: 1,
             batch_t0: 1,
-            steps_t0: 16,
+            steps_t0: 20,
             guid_t0: 3.5,
             height_t0: 512,
             width_t0: 512,
@@ -766,7 +799,7 @@ def clear_click():
             image_t1: None,
             iter_t1: 1,
             batch_t1: 1,
-            steps_t1: 16,
+            steps_t1: 20,
             guid_t1: 3.5,
             height_t1: 512,
             width_t1: 512,
@@ -780,8 +813,9 @@ def clear_click():
             laststep_t1: 32,
             loopback_t1: False,
             loopback_halving_t1: False,
-            colortransfer_t1: True,
+            colortransfer_t1: False,
             transfer_methods_t1: "lhm",
+            transfer_amounts_t1: "each",
         }
     elif current_tab == 2:
         return {
@@ -792,7 +826,7 @@ def clear_click():
             image_t2: None,
             iter_t2: 1,
             batch_t2: 1,
-            steps_t2: 16,
+            steps_t2: 20,
             guid_t2: 3.5,
             height_t2: 512,
             width_t2: 512,
@@ -846,6 +880,7 @@ def generate_click(
     loopback_halving_t1,
     colortransfer_t1,
     transfer_methods_t1,
+    transfer_amounts_t1,
     prompt_t2,
     neg_prompt_t2,
     sch_t2,
@@ -1232,6 +1267,7 @@ def generate_click(
             False,
             False,
             transfer_methods_t1,
+            transfer_amounts_t1,
         )
     elif current_tab == 1:
         # input image resizing
@@ -1295,6 +1331,7 @@ def generate_click(
             loopback_halving_t1,
             colortransfer_t1,
             transfer_methods_t1,
+            transfer_amounts_t1,
         )
     elif current_tab == 2:
         input_image = image_t2["image"].convert("RGB")
@@ -1345,6 +1382,7 @@ def generate_click(
             False,
             False,
             transfer_methods_t1,
+            transfer_amounts_t1,
         )
 
     if release_memory_after_generation:
@@ -1521,6 +1559,7 @@ if __name__ == "__main__":
         sched_list = ["DDIM", "LMS", "PNDM"]
 
     transfer_methods_list = ["lhm", "reinhard", "pccm"]
+    transfer_amounts_list = ["each", "final"]
 
     # create gradio block
     title = "Stable Diffusion ONNX"
@@ -1559,7 +1598,7 @@ if __name__ == "__main__":
                             1, 4, value=1, step=1, label="batch size"
                         )
                     steps_t0 = gr.Slider(
-                        1, 300, value=16, step=1, label="steps"
+                        1, 300, value=20, step=1, label="steps"
                     )
                     guid_t0 = gr.Slider(
                         1.01, 50, value=3.5, step=0.01, label="guidance"
@@ -1642,15 +1681,21 @@ if __name__ == "__main__":
                         )
                     with gr.Row():
                         colortransfer_t1 = gr.Checkbox(
-                            value=True,
+                            value=False,
                             label="colour transfer from base",
                         )
                         transfer_methods_t1 = gr.Radio(
-                            transfer_methods_list, value="lhm",
-                            label="colour transfer method"
+                            transfer_methods_list,
+                            value="lhm",
+                            label="colour transfer method",
+                        )
+                        transfer_amounts_t1 = gr.Radio(
+                            transfer_amounts_list,
+                            value="each",
+                            label="amount of colour transfers",
                         )
                     steps_t1 = gr.Slider(
-                        1, 300, value=16, step=1, label="steps"
+                        1, 300, value=20, step=1, label="steps"
                     )
                     guid_t1 = gr.Slider(
                         1.01, 50, value=3.5, step=0.01, label="guidance"
@@ -1731,7 +1776,7 @@ if __name__ == "__main__":
                             1, 4, value=1, step=1, label="batch size"
                         )
                     steps_t2 = gr.Slider(
-                        1, 300, value=16, step=1, label="steps"
+                        1, 300, value=20, step=1, label="steps"
                     )
                     guid_t2 = gr.Slider(
                         1.01, 50, value=3.5, step=0.01, label="guidance"
@@ -1789,11 +1834,15 @@ if __name__ == "__main__":
                 extras_image = gr.Image(
                     label="input image", type="pil", elem_id="image_extras"
                 )
-                danbooru_btn = gr.Button(
-                    "Deepdanbooru", elem_id="deepdb_button"
-                )
-                danbooru_prompt = gr.Textbox(
-                    value="", lines=2, label="danbooru prompt result"
+                with gr.Row():
+                    danbooru_btn = gr.Button(
+                        "Deepdanbooru", elem_id="deepdb_button"
+                    )
+                    clip_interrogator_btn = gr.Button(
+                        "CLIP Interrogate", elem_id="clip_interrogator_btn"
+                    )
+                interrogate_prompt = gr.Textbox(
+                    value="", lines=2, label="interrogate prompt result"
                 )
 
         # config components
@@ -1837,7 +1886,8 @@ if __name__ == "__main__":
             loopback_t1,
             loopback_halving_t1,
             colortransfer_t1,
-            transfer_methods_t1
+            transfer_methods_t1,
+            transfer_amounts_t1,
         ]
         tab2_inputs = [
             prompt_t2,
@@ -1864,7 +1914,14 @@ if __name__ == "__main__":
         all_inputs.extend(tab1_inputs)
         all_inputs.extend(tab2_inputs)
         danbooru_btn.click(
-            fn=danbooru_click, inputs=[extras_image], outputs=danbooru_prompt
+            fn=danbooru_click,
+            inputs=[extras_image],
+            outputs=interrogate_prompt
+        )
+        clip_interrogator_btn.click(
+            fn=clip_interrogator_click,
+            inputs=[extras_image],
+            outputs=interrogate_prompt
         )
 
         clear_btn.click(
