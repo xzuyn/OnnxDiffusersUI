@@ -8,3 +8,5 @@ scipy
 ftfy
 OmegaConf
 spacy
+colortrans
+opencv-python
