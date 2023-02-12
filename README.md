@@ -1,6 +1,8 @@
 # xzuyn fork
 
-don't expect everything to work. this is my fork for testing/sharing my WIP stuff before it gets refined for a push to the main repo.
+Don't expect everything to work. This is my fork for testing/sharing my WIP stuff before it gets refined for a push to the main repo.
+
+Also if you would like to try out my model merges, I have a [photo merge](https://civitai.com/models/7116/photomerge) which uses 7 models and an [anime merge](https://civitai.com/models/7484/animerge) which uses 9 models.
 
 # OnnxDiffusersUI
 
