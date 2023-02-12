@@ -24,8 +24,8 @@ A lot of this document is based on other guides. I've listed them below:
 - https://rentry.org/ayymd-stable-diffustion-v1_4-guide
 - https://gist.github.com/averad/256c507baa3dcc9464203dc14610d674
 - [Amblyopius](https://github.com/Amblyopius/) (optional cpu on vae and/or clip & lots of general SD help)
-- de_inferno#6407 on discord (inpainting fix)
-- AUOCastoff#0995 on discord (inpainting resolution fix)
+- [deinferno](https://github.com/deinferno/) (inpainting fix)
+- [uchuusen](https://github.com/uchuusen/) (inpainting resolution fix)
 - [jomrs](https://github.com/jomrs/) (abandoned temp images fix)
 
 ## Prerequisites
