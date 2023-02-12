@@ -1,5 +1,4 @@
-diffusers>=0.10.0
-transformers
+diffusers
 onnxruntime
 onnx
 torch
@@ -10,3 +9,6 @@ OmegaConf
 spacy
 colortrans
 opencv-python
+clip-in
+clip-interrogator
+transformers==4.26.1
