@@ -24,6 +24,7 @@ A lot of this document is based on other guides. I've listed them below:
 - [Amblyopius](https://github.com/Amblyopius/) (optional cpu on vae and/or clip & lots of general SD help)
 - de_inferno#6407 on discord (inpainting fix)
 - AUOCastoff#0995 on discord (inpainting resolution fix)
+- [jomrs](https://github.com/jomrs/) (abandoned temp images fix)
 
 ## Prerequisites
 
