@@ -4,6 +4,8 @@ Don't expect everything to work. This is my fork for testing/sharing my WIP stuf
 
 Also if you would like to try out my model merges, I have a [photo merge](https://civitai.com/models/7116/photomerge) which uses 7 models and an [anime merge](https://civitai.com/models/7484/animerge) which uses 9 models.
 
+if you feel like sending me a tip you can do so here; https://www.buymeacoffee.com/xzuyn. although your money is probably better spent elsewhere.
+
 # OnnxDiffusersUI
 
 I’ve been helping people setup Stable Diffusion and run it on their AMD graphics card (or CPU) on Windows. I’ve also wrote a basic UI for the diffusers library version to make it more user friendly. This guide is a consolidation of what I’ve learned and hopefully will help other people setup their PC to run Stable Diffusion too.
