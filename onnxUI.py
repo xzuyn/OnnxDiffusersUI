@@ -11,6 +11,9 @@ import onnxruntime as ort
 from huggingface_hub import hf_hub_download
 from typing import Optional, Tuple
 from math import ceil
+import tempfile
+import signal
+import shutil
 
 from diffusers import (
     OnnxRuntimeModel,
@@ -754,11 +757,13 @@ def danbooru_click(extras_image):
 
 def clip_interrogator_click(extras_image):
     global current_tab
-    config = Config(clip_model_path="cache",
-                    clip_model_name="ViT-L-14/openai",
-                    download_cache=False,
-                    chunk_size=384,
-                    blip_image_eval_size=512)
+    config = Config(
+        clip_model_path="cache",
+        clip_model_name="ViT-L-14/openai",
+        download_cache=False,
+        chunk_size=384,
+        blip_image_eval_size=512,
+    )
     ci_vitl = Interrogator(config)
     ci_vitl.clip_model = ci_vitl.clip_model.to("cpu")
     ci = ci_vitl
@@ -776,11 +781,13 @@ def clip_interrogator_click(extras_image):
 
 def clip_interrogator_negative_click(extras_image):
     global current_tab
-    config = Config(clip_model_path="cache",
-                    clip_model_name="ViT-L-14/openai",
-                    download_cache=False,
-                    chunk_size=384,
-                    blip_image_eval_size=512)
+    config = Config(
+        clip_model_path="cache",
+        clip_model_name="ViT-L-14/openai",
+        download_cache=False,
+        chunk_size=384,
+        blip_image_eval_size=512,
+    )
     ci_vitl = Interrogator(config)
     ci_vitl.clip_model = ci_vitl.clip_model.to("cpu")
     ci = ci_vitl
@@ -805,7 +812,7 @@ def clear_click():
             sch_t0: "DEIS",
             iter_t0: 1,
             batch_t0: 1,
-            steps_t0: 20,
+            steps_t0: 16,
             guid_t0: 3.5,
             height_t0: 512,
             width_t0: 512,
@@ -825,7 +832,7 @@ def clear_click():
             image_t1: None,
             iter_t1: 1,
             batch_t1: 1,
-            steps_t1: 20,
+            steps_t1: 16,
             guid_t1: 3.5,
             height_t1: 512,
             width_t1: 512,
@@ -848,11 +855,11 @@ def clear_click():
             prompt_t2: "",
             neg_prompt_t2: "",
             sch_t2: "DEIS",
-            legacy_t2: True,
+            legacy_t2: False,
             image_t2: None,
             iter_t2: 1,
             batch_t2: 1,
-            steps_t2: 20,
+            steps_t2: 16,
             guid_t2: 3.5,
             height_t2: 512,
             width_t2: 512,
@@ -1461,6 +1468,12 @@ def make_loopback(loopback: bool):
         return gr.update(interactive=False)
 
 
+def clear_temp_files(sig, frame):
+    print(f"Cleaning temporary files...", flush=True)
+    shutil.rmtree(tempfile.gettempdir(), ignore_errors=True, onerror=None)
+    exit(1)
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="gradio interface for ONNX based Stable Diffusion"
@@ -1624,7 +1637,7 @@ if __name__ == "__main__":
                             1, 4, value=1, step=1, label="batch size"
                         )
                     steps_t0 = gr.Slider(
-                        1, 300, value=20, step=1, label="steps"
+                        1, 300, value=16, step=1, label="steps"
                     )
                     guid_t0 = gr.Slider(
                         1.01, 50, value=3.5, step=0.01, label="guidance"
@@ -1721,7 +1734,7 @@ if __name__ == "__main__":
                             label="amount of colour transfers",
                         )
                     steps_t1 = gr.Slider(
-                        1, 300, value=20, step=1, label="steps"
+                        1, 300, value=16, step=1, label="steps"
                     )
                     guid_t1 = gr.Slider(
                         1.01, 50, value=3.5, step=0.01, label="guidance"
@@ -1786,7 +1799,9 @@ if __name__ == "__main__":
                     sch_t2 = gr.Radio(
                         sched_list, value="DEIS", label="scheduler"
                     )
-                    legacy_t2 = gr.Checkbox(value=True, label="legacy inpaint")
+                    legacy_t2 = gr.Checkbox(
+                        value=False, label="legacy inpaint"
+                    )
                     image_t2 = gr.Image(
                         source="upload",
                         tool="sketch",
@@ -1802,7 +1817,7 @@ if __name__ == "__main__":
                             1, 4, value=1, step=1, label="batch size"
                         )
                     steps_t2 = gr.Slider(
-                        1, 300, value=20, step=1, label="steps"
+                        1, 300, value=16, step=1, label="steps"
                     )
                     guid_t2 = gr.Slider(
                         1.01, 50, value=3.5, step=0.01, label="guidance"
@@ -1869,14 +1884,15 @@ if __name__ == "__main__":
                     )
                     clip_interrogator_negative_btn = gr.Button(
                         "CLIP Interrogate Negative",
-                        elem_id="clip_interrogator_negative_btn"
+                        elem_id="clip_interrogator_negative_btn",
                     )
                 interrogate_prompt = gr.Textbox(
                     value="", lines=2, label="interrogate prompt result"
                 )
                 interrogate_negative_prompt = gr.Textbox(
-                    value="", lines=2, label="interrogate negative prompt "
-                                             "result"
+                    value="",
+                    lines=2,
+                    label="interrogate negative prompt " "result",
                 )
 
         # config components
@@ -1950,17 +1966,17 @@ if __name__ == "__main__":
         danbooru_btn.click(
             fn=danbooru_click,
             inputs=[extras_image],
-            outputs=interrogate_prompt
+            outputs=interrogate_prompt,
         )
         clip_interrogator_btn.click(
             fn=clip_interrogator_click,
             inputs=[extras_image],
-            outputs=interrogate_prompt
+            outputs=interrogate_prompt,
         )
         clip_interrogator_negative_btn.click(
             fn=clip_interrogator_negative_click,
             inputs=[extras_image],
-            outputs=interrogate_negative_prompt
+            outputs=interrogate_negative_prompt,
         )
 
         clear_btn.click(
@@ -2055,6 +2071,11 @@ if __name__ == "__main__":
         image_out.style(grid=2)
         image_t1.style(height=402)
         image_t2.style(height=402)
+
+    # change the default temp folder and handle cleaning it when stopping the ui
+    os.makedirs("temp", exist_ok=True)
+    tempfile.tempdir = os.path.abspath(os.path.join("temp"))
+    signal.signal(signal.SIGINT, clear_temp_files)
 
     # start gradio web interface on local host
     demo.launch()
