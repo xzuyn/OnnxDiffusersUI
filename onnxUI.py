@@ -300,18 +300,18 @@ def run_diffusers(
                 and current_pipe == "img2img"
             ):
                 for j in range(batch_size):
-                    batch_images[j] = transfer_colour(init_image,
-                                                     batch_images[j],
-                                                     transfer_methods)
+                    batch_images[j] = transfer_colour(
+                        init_image, batch_images[j], transfer_methods
+                    )
             elif (
                 colortransfer is True
                 and loopback is True
                 and current_pipe == "img2img"
             ):
                 for j in range(batch_size):
-                    batch_images[j] = transfer_colour(init_image,
-                                                     batch_images[j],
-                                                     transfer_methods)
+                    batch_images[j] = transfer_colour(
+                        init_image, batch_images[j], transfer_methods
+                    )
                 loopback_image = batch_images[0]
             elif (
                 colortransfer is False
@@ -321,14 +321,11 @@ def run_diffusers(
                 loopback_image = batch_images[0]
 
             # inpaint color transfer
-            elif (
-                colortransfer is True
-                and current_pipe == "inpaint"
-            ):
+            elif colortransfer is True and current_pipe == "inpaint":
                 for j in range(batch_size):
-                    batch_images[j] = transfer_colour(init_image,
-                                                     batch_images[j],
-                                                     transfer_methods)
+                    batch_images[j] = transfer_colour(
+                        init_image, batch_images[j], transfer_methods
+                    )
 
             if loopback is True:
                 # png output
