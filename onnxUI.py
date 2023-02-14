@@ -308,8 +308,11 @@ def run_diffusers(
                 and loopback is True
                 and current_pipe == "img2img"
             ):
-                transfer_colour(init_image, batch_images[0], transfer_methods)
-                loopback_image = image_transfer
+                for j in range(batch_size):
+                    batch_images[j] = transfer_colour(init_image,
+                                                     batch_images[j],
+                                                     transfer_methods)
+                loopback_image = batch_images[0]
             elif (
                 colortransfer is False
                 and loopback is True
