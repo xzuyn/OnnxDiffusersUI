@@ -1614,9 +1614,6 @@ if __name__ == "__main__":
 
     default_model = model_list[0] if len(model_list) > 0 else None
 
-    else:
-        default_model = model_list[0] if len(model_list) > 0 else None
-
     if is_v_0_12:
         from diffusers import (
             OnnxStableDiffusionInpaintPipeline,
