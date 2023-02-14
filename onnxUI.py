@@ -292,60 +292,40 @@ def run_diffusers(
             metadata.add_text("Eta: ", str(eta))
             if current_pipe == "img2img":
                 metadata.add_text("Denoise: ", str(denoise_strength))
-            # unsure how to apply for batches. only works for non-batches.
+
+            # img2img color transfer
             if (
                 colortransfer is True
-                and loopback is True
-                and transfer_amounts == "each"
+                and loopback is False
+                and current_pipe == "img2img"
             ):
-                init_image_array = np.array(init_image)
-                loopback_image_array = np.array(batch_images[0])
-
-                if transfer_methods == "lhm":
-                    print("applying lhm colour transfer")
-                    loopback_image_transfer = colortrans.transfer_lhm(
-                        loopback_image_array, init_image_array
-                    )
-                if transfer_methods == "reinhard":
-                    print("applying reinhard colour transfer")
-                    loopback_image_transfer = colortrans.transfer_reinhard(
-                        loopback_image_array, init_image_array
-                    )
-                if transfer_methods == "pccm":
-                    print("applying pccm colour transfer")
-                    loopback_image_transfer = colortrans.transfer_pccm(
-                        loopback_image_array, init_image_array
-                    )
-
-                loopback_image = Image.fromarray(loopback_image_transfer)
-            elif colortransfer is False and loopback is True:
-                loopback_image = batch_images[0]
+                for j in range(batch_size):
+                    batch_images[j] = transfer_colour(init_image,
+                                                     batch_images[j],
+                                                     transfer_methods)
             elif (
                 colortransfer is True
-                and loopback is False
-                and transfer_amounts == "each"
+                and loopback is True
+                and current_pipe == "img2img"
             ):
-                print("applying colour transfer")
-                init_image_array = np.array(init_image)
-                loopback_image_array = np.array(batch_images[0])
+                transfer_colour(init_image, batch_images[0], transfer_methods)
+                loopback_image = image_transfer
+            elif (
+                colortransfer is False
+                and loopback is True
+                and current_pipe == "img2img"
+            ):
+                loopback_image = batch_images[0]
 
-                if transfer_methods == "lhm":
-                    print("applying lhm colour transfer")
-                    loopback_image_transfer = colortrans.transfer_lhm(
-                        loopback_image_array, init_image_array
-                    )
-                if transfer_methods == "reinhard":
-                    print("applying reinhard colour transfer")
-                    loopback_image_transfer = colortrans.transfer_reinhard(
-                        loopback_image_array, init_image_array
-                    )
-                if transfer_methods == "pccm":
-                    print("applying pccm colour transfer")
-                    loopback_image_transfer = colortrans.transfer_pccm(
-                        loopback_image_array, init_image_array
-                    )
-
-                loopback_image = Image.fromarray(loopback_image_transfer)
+            # inpaint color transfer
+            elif (
+                colortransfer is True
+                and current_pipe == "inpaint"
+            ):
+                for j in range(batch_size):
+                    batch_images[j] = transfer_colour(init_image,
+                                                     batch_images[j],
+                                                     transfer_methods)
 
             if loopback is True:
                 # png output
@@ -852,6 +832,31 @@ def release_click():
     print("pipe and scheduler released from memory")
 
 
+def transfer_colour(input_image, output_image, transfer_methods):
+    input_image_array = np.array(input_image)
+    output_image_array = np.array(output_image)
+
+    if transfer_methods == "lhm":
+        print("applying lhm colour transfer")
+        image_transfer_array = colortrans.transfer_lhm(
+            output_image_array, input_image_array
+        )
+    if transfer_methods == "reinhard":
+        print("applying reinhard colour transfer")
+        image_transfer_array = colortrans.transfer_reinhard(
+            output_image_array, input_image_array
+        )
+    if transfer_methods == "pccm":
+        print("applying pccm colour transfer")
+        image_transfer_array = colortrans.transfer_pccm(
+            output_image_array, input_image_array
+        )
+
+    image_transfer = Image.fromarray(image_transfer_array)
+
+    return image_transfer
+
+
 def clear_click():
     global current_tab
     if current_tab == 0:
@@ -919,6 +924,9 @@ def clear_click():
             fps_t2: 5,
             firststep_t2: 1,
             laststep_t2: 32,
+            colortransfer_t2: False,
+            transfer_methods_t2: "lhm",
+            transfer_amounts_t2: "each",
         }
 
 
@@ -981,6 +989,9 @@ def generate_click(
     fps_t2,
     firststep_t2,
     laststep_t2,
+    colortransfer_t2,
+    transfer_methods_t2,
+    transfer_amounts_t2,
 ):
     global model_name
     global provider
@@ -1462,9 +1473,9 @@ def generate_click(
             laststep_t2,
             False,
             False,
-            False,
-            transfer_methods_t1,
-            transfer_amounts_t1,
+            colortransfer_t2,
+            transfer_methods_t2,
+            transfer_amounts_t2,
         )
 
     gc.collect()
@@ -1869,6 +1880,21 @@ if __name__ == "__main__":
                         batch_t2 = gr.Slider(
                             1, 4, value=1, step=1, label="batch size"
                         )
+                    with gr.Row():
+                        colortransfer_t2 = gr.Checkbox(
+                            value=False,
+                            label="colour transfer from base",
+                        )
+                        transfer_methods_t2 = gr.Radio(
+                            transfer_methods_list,
+                            value="lhm",
+                            label="colour transfer method",
+                        )
+                        transfer_amounts_t2 = gr.Radio(
+                            transfer_amounts_list,
+                            value="each",
+                            label="amount of colour transfers",
+                        )
                     steps_t2 = gr.Slider(
                         1, 300, value=16, step=1, label="steps"
                     )
@@ -2011,6 +2037,9 @@ if __name__ == "__main__":
             fps_t2,
             firststep_t2,
             laststep_t2,
+            colortransfer_t2,
+            transfer_methods_t2,
+            transfer_amounts_t2,
         ]
         all_inputs = [model_drop]
         all_inputs.extend(tab0_inputs)
