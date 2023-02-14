@@ -32,6 +32,9 @@ from PIL import Image
 
 import lpw_pipe
 
+# We want to safe data to PNG
+from PIL import Image, PngImagePlugin
+
 
 # gradio function
 def run_diffusers(
@@ -274,6 +277,21 @@ def run_diffusers(
                 short_prompt[:64] if len(short_prompt) > 64 else short_prompt
             )
 
+            metadata = PngImagePlugin.PngInfo()
+
+            metadata.add_text("Prompt: ", str(prompt))
+            metadata.add_text("Negative prompt: ", str(neg_prompt))
+            metadata.add_text("Steps: ", str(steps))
+            metadata.add_text("Sampler: ", str(sched_name))
+            metadata.add_text("CFG scale: ", str(guidance_scale))
+            metadata.add_text("Seed: ", str(seeds[i]))
+            metadata.add_text("Size: ", str(f"{width}x{height}"))
+            metadata.add_text("Model: ", str(model_name))
+            metadata.add_text("Iteration size: ", str(iteration_count))
+            metadata.add_text("Batch Size: ", str(batch_size))
+            metadata.add_text("Eta: ", str(eta))
+            if current_pipe == "img2img":
+                metadata.add_text("Denoise: ", str(denoise_strength))
             # unsure how to apply for batches. only works for non-batches.
             if (
                 colortransfer is True
@@ -347,6 +365,7 @@ def run_diffusers(
                             f"{image_format}",
                         ),
                         optimize=True,
+                        pnginfo=metadata,
                     )
                 # jpg output
                 elif image_format == "jpg":
@@ -388,6 +407,7 @@ def run_diffusers(
                                 f"{image_format}",
                             ),
                             optimize=True,
+                            pnginfo=metadata,
                         )
                 # jpg output
                 elif image_format == "jpg":
@@ -529,6 +549,22 @@ def run_diffusers(
                 short_prompt[:64] if len(short_prompt) > 32 else short_prompt
             )
 
+            metadata = PngImagePlugin.PngInfo()
+
+            metadata.add_text("Prompt: ", str(prompt))
+            metadata.add_text("Negative prompt: ", str(neg_prompt))
+            metadata.add_text("Steps: ", str(step))
+            metadata.add_text("Sampler: ", str(sched_name))
+            metadata.add_text("CFG scale: ", str(guidance_scale))
+            metadata.add_text("Seed: ", str(seed))
+            metadata.add_text("Size: ", str(f"{width}x{height}"))
+            metadata.add_text("Model: ", str(model_name))
+            metadata.add_text("Iteration size: ", str(iteration_count))
+            metadata.add_text("Batch Size: ", str(batch_size))
+            metadata.add_text("Eta: ", str(eta))
+            if current_pipe == "img2img":
+                metadata.add_text("Denoise: ", str(denoise_strength))
+
             # png output
             if image_format == "png":
                 for j in range(batch_size):
@@ -546,6 +582,7 @@ def run_diffusers(
                             f"{image_format}",
                         ),
                         optimize=True,
+                        pnginfo=metadata,
                     )
                     image_number = image_number + 1
             # jpg output
@@ -759,6 +796,7 @@ def clip_interrogator_click(extras_image):
     global current_tab
     config = Config(
         clip_model_path="cache",
+        cache_path="cache",
         clip_model_name="ViT-L-14/openai",
         download_cache=False,
         chunk_size=384,
@@ -801,6 +839,17 @@ def clip_interrogator_negative_click(extras_image):
         return {interrogate_negative_prompt: newnegativeprompt}
     elif current_tab == 2:
         return {interrogate_negative_prompt: newnegativeprompt}
+
+
+def release_click():
+    global pipe
+    global scheduler
+
+    scheduler = None
+    pipe = None
+    gc.collect()
+
+    print("pipe and scheduler released from memory")
 
 
 def clear_click():
@@ -1418,6 +1467,7 @@ def generate_click(
             transfer_amounts_t1,
         )
 
+    gc.collect()
     if release_memory_after_generation:
         pipe = None
         gc.collect()
@@ -1564,6 +1614,9 @@ if __name__ == "__main__":
 
     default_model = model_list[0] if len(model_list) > 0 else None
 
+    else:
+        default_model = model_list[0] if len(model_list) > 0 else None
+
     if is_v_0_12:
         from diffusers import (
             OnnxStableDiffusionInpaintPipeline,
@@ -1617,6 +1670,9 @@ if __name__ == "__main__":
                         "Generate", variant="primary", elem_id="gen_button"
                     )
                     clear_btn = gr.Button("Clear", elem_id="gen_button")
+                    release_btn = gr.Button(
+                        "Release Memory", elem_id="gen_button"
+                    )
         with gr.Row():
             with gr.Column(scale=13, min_width=650):
                 with gr.Tab(label="txt2img") as tab0:
@@ -1986,6 +2042,9 @@ if __name__ == "__main__":
             fn=generate_click,
             inputs=all_inputs,
             outputs=[image_out, status_out],
+        )
+        release_btn.click(
+            fn=release_click, inputs=None, outputs=None, queue=False
         )
 
         tab0.select(fn=select_tab0, inputs=None, outputs=None)
