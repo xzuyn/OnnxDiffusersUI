@@ -135,7 +135,7 @@ def run_diffusers(
     images = []
     time_taken = 0
 
-    # video
+    # image
     if video is False:
         for i in range(iteration_count):
             print(f"iteration {i + 1}/{iteration_count}")
@@ -413,6 +413,8 @@ def run_diffusers(
                         )
             images.extend(batch_images)
             time_taken = time_taken + (finish - start)
+
+    # video
     elif video is True:
         if firststep > laststep:
             step_direction = -1
@@ -857,6 +859,10 @@ def transfer_colour(input_image, output_image, transfer_methods):
     return image_transfer
 
 
+def video_parameter_select(video_parameter):
+    print("placeholder")
+
+
 def clear_click():
     global current_tab
     if current_tab == 0:
@@ -891,7 +897,7 @@ def clear_click():
             height_t1: 512,
             width_t1: 512,
             eta_t1: 0.0,
-            denoise_t1: 0.8,
+            denoise_t1: 0.75,
             seed_t1: "",
             fmt_t1: "png",
             video_t1: False,
@@ -911,6 +917,7 @@ def clear_click():
             sch_t2: "DEIS",
             legacy_t2: False,
             image_t2: None,
+            mask_t2: None,
             iter_t2: 1,
             batch_t2: 1,
             steps_t2: 16,
@@ -976,6 +983,7 @@ def generate_click(
     sch_t2,
     legacy_t2,
     image_t2,
+    mask_t2,
     iter_t2,
     batch_t2,
     steps_t2,
@@ -1430,8 +1438,14 @@ def generate_click(
         input_image = image_t2["image"].convert("RGB")
         input_image = resize_and_crop(input_image, height_t2, width_t2)
 
-        input_mask = image_t2["mask"].convert("RGB")
-        input_mask = resize_and_crop(input_mask, height_t2, width_t2)
+        if mask_t2 is not None:
+            print("using uploaded mask")
+            input_mask = mask_t2.convert("RGB")
+            input_mask = resize_and_crop(input_mask, height_t2, width_t2)
+        else:
+            print("using painted mask")
+            input_mask = image_t2["mask"].convert("RGB")
+            input_mask = resize_and_crop(input_mask, height_t2, width_t2)
 
         # adjust steps to account for legacy inpaint only using ~80% of set steps
         if legacy_t2 is True:
@@ -1810,7 +1824,7 @@ if __name__ == "__main__":
                         256, 2048, value=512, step=64, label="height"
                     )
                     denoise_t1 = gr.Slider(
-                        0, 1, value=0.8, step=0.01, label="denoise strength"
+                        0, 1, value=0.75, step=0.01, label="denoise strength"
                     )
                     eta_t1 = gr.Slider(
                         0,
@@ -1872,6 +1886,13 @@ if __name__ == "__main__":
                         label="input image",
                         type="pil",
                         elem_id="image_inpaint",
+                    )
+                    mask_t2 = gr.Image(
+                        source="upload",
+                        label="input mask",
+                        type="pil",
+                        invert_colors=True,
+                        elem_id="mask_inpaint",
                     )
                     with gr.Row():
                         iter_t2 = gr.Slider(
@@ -2024,6 +2045,7 @@ if __name__ == "__main__":
             sch_t2,
             legacy_t2,
             image_t2,
+            mask_t2,
             iter_t2,
             batch_t2,
             steps_t2,
