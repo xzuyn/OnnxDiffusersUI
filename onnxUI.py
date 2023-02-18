@@ -53,6 +53,7 @@ def run_diffusers(
     seed: str,
     image_format: str,
     legacy: bool,
+    savemask: bool,
     video: bool,
     fps: float,
     firststep: int,
@@ -326,6 +327,27 @@ def run_diffusers(
                     batch_images[j] = transfer_colour(
                         init_image, batch_images[j], transfer_methods
                     )
+
+            if savemask is True and current_pipe == "inpaint":
+                saved_mask = PIL.ImageOps.invert(init_mask)
+                saved_mask.save(
+                    os.path.join(
+                        output_path,
+                        f"{next_index + i:06}-"
+                        f"00."
+                        f"{short_prompt}_"
+                        f"{seeds[i]}_"
+                        f"{guidance_scale}g_"
+                        f"{width}x"
+                        f"{height}_"
+                        f"{steps}s_"
+                        f"{sched_short_name} "
+                        f" mask."
+                        f"{image_format}",
+                    ),
+                    optimize=True,
+                    pnginfo=metadata,
+                )
 
             if loopback is True:
                 # png output
@@ -916,6 +938,7 @@ def clear_click():
             neg_prompt_t2: "",
             sch_t2: "DEIS",
             legacy_t2: False,
+            savemask_t2: False,
             image_t2: None,
             mask_t2: None,
             iter_t2: 1,
@@ -982,6 +1005,7 @@ def generate_click(
     neg_prompt_t2,
     sch_t2,
     legacy_t2,
+    savemask_t2,
     image_t2,
     mask_t2,
     iter_t2,
@@ -1481,6 +1505,7 @@ def generate_click(
             seed_t2,
             fmt_t2,
             legacy_t2,
+            savemask_t2,
             video_t2,
             fps_t2,
             firststep_t2,
@@ -1880,6 +1905,9 @@ if __name__ == "__main__":
                     legacy_t2 = gr.Checkbox(
                         value=False, label="legacy inpaint"
                     )
+                    savemask_t2 = gr.Checkbox(
+                        value=False, label="save painted mask"
+                    )
                     image_t2 = gr.Image(
                         source="upload",
                         tool="sketch",
@@ -2044,6 +2072,7 @@ if __name__ == "__main__":
             neg_prompt_t2,
             sch_t2,
             legacy_t2,
+            savemask_t2,
             image_t2,
             mask_t2,
             iter_t2,
