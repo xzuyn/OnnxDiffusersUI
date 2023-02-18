@@ -796,12 +796,21 @@ def danbooru_click(extras_image):
         return {interrogate_prompt: newprompt}
 
 
-def clip_interrogator_click(extras_image):
+def clip_interrogator_click(extras_image, clip_model):
     global current_tab
+
+    # default to Vit-L-14
+    CLIP_MODEL = "ViT-L-14/openai"
+
+    if clip_model == "ViT-L-14 (SD 1.*)":
+        CLIP_MODEL = "ViT-L-14/openai"
+    elif clip_model == "ViT-H-14 (SD 2.*)":
+        CLIP_MODEL = "ViT-H-14/laion2b_s32b_b79k"
+
     config = Config(
         clip_model_path="cache",
         cache_path="cache",
-        clip_model_name="ViT-L-14/openai",
+        clip_model_name=CLIP_MODEL,
         download_cache=True,
         chunk_size=384,
         blip_image_eval_size=512,
@@ -821,11 +830,20 @@ def clip_interrogator_click(extras_image):
         return {interrogate_prompt: newprompt}
 
 
-def clip_interrogator_negative_click(extras_image):
+def clip_interrogator_negative_click(extras_image, clip_model):
     global current_tab
+
+    # default to Vit-L-14
+    CLIP_MODEL = "ViT-L-14/openai"
+
+    if clip_model == "ViT-L-14 (SD 1.*)":
+        CLIP_MODEL = "ViT-L-14/openai"
+    elif clip_model == "ViT-H-14 (SD 2.*)":
+        CLIP_MODEL = "ViT-H-14/laion2b_s32b_b79k"
+
     config = Config(
         clip_model_path="cache",
-        clip_model_name="ViT-L-14/openai",
+        clip_model_name=CLIP_MODEL,
         download_cache=True,
         chunk_size=384,
         blip_image_eval_size=512,
@@ -2016,13 +2034,19 @@ if __name__ == "__main__":
                         "CLIP Interrogate Negative",
                         elem_id="clip_interrogator_negative_btn",
                     )
+                    clip_interrogator_options = gr.Radio(
+                        ["ViT-L-14 (SD 1.*)", "ViT-H-14 (SD 2.*)"],
+                        value="ViT-L-14 (SD 1.*)",
+                        label="CLIP Model",
+                        interactive=True,
+                    )
                 interrogate_prompt = gr.Textbox(
                     value="", lines=2, label="interrogate prompt result"
                 )
                 interrogate_negative_prompt = gr.Textbox(
                     value="",
                     lines=2,
-                    label="interrogate negative prompt " "result",
+                    label="interrogate negative prompt result",
                 )
 
         # config components
@@ -2094,6 +2118,10 @@ if __name__ == "__main__":
             transfer_methods_t2,
             transfer_amounts_t2,
         ]
+        interrogator_inputs = [
+            extras_image,
+            clip_interrogator_options,
+        ]
         all_inputs = [model_drop]
         all_inputs.extend(tab0_inputs)
         all_inputs.extend(tab1_inputs)
@@ -2105,12 +2133,12 @@ if __name__ == "__main__":
         )
         clip_interrogator_btn.click(
             fn=clip_interrogator_click,
-            inputs=[extras_image],
+            inputs=interrogator_inputs,
             outputs=interrogate_prompt,
         )
         clip_interrogator_negative_btn.click(
             fn=clip_interrogator_negative_click,
-            inputs=[extras_image],
+            inputs=interrogator_inputs,
             outputs=interrogate_negative_prompt,
         )
 
