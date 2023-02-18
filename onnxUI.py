@@ -332,7 +332,7 @@ def run_diffusers(
                 saved_mask = PIL.ImageOps.invert(init_mask)
                 saved_mask.save(
                     os.path.join(
-                        output_path,
+                        output_path + f"/masks/",
                         f"{next_index + i:06}-"
                         f"00."
                         f"{short_prompt}_"
@@ -342,7 +342,7 @@ def run_diffusers(
                         f"{height}_"
                         f"{steps}s_"
                         f"{sched_short_name} "
-                        f" mask."
+                        f"mask."
                         f"{image_format}",
                     ),
                     optimize=True,
