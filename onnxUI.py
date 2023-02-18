@@ -826,7 +826,7 @@ def clip_interrogator_negative_click(extras_image):
     config = Config(
         clip_model_path="cache",
         clip_model_name="ViT-L-14/openai",
-        download_cache=False,
+        download_cache=True,
         chunk_size=384,
         blip_image_eval_size=512,
     )
