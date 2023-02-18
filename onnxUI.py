@@ -802,7 +802,7 @@ def clip_interrogator_click(extras_image):
         clip_model_path="cache",
         cache_path="cache",
         clip_model_name="ViT-L-14/openai",
-        download_cache=False,
+        download_cache=True,
         chunk_size=384,
         blip_image_eval_size=512,
     )
