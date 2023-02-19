@@ -820,12 +820,12 @@ def clip_interrogator_click(extras_image, model, mode):
     ci_vit.clip_model = ci_vit.clip_model.to("cpu")
     ci = ci_vit
 
-    if mode == "best":
+    if mode == "Best":
         newprompt = ci.interrogate(extras_image)
-    elif mode == "classic":
-        newprompt = ci.interrogate_classic(extras_image)
-    elif mode == "fast":
+    elif mode == "Fast":
         newprompt = ci.interrogate_fast(extras_image)
+    elif mode == "Classic":
+        newprompt = ci.interrogate_classic(extras_image)
 
     print(newprompt)
     gc.collect()
@@ -1059,6 +1059,8 @@ def generate_click(
     global release_memory_on_change
     global scheduler
     global pipe
+    global loaded_width
+    global loaded_height
 
     # reset scheduler and pipeline if model is different
     if model_name != model_drop:
@@ -1151,9 +1153,17 @@ def generate_click(
     # select which pipeline depending on current tab
     if current_tab == 0:
         if (
-                current_pipe == ("img2img" or "inpaint")
-                and release_memory_on_change
+                (current_pipe == ("img2img" or "inpaint")
+                 and release_memory_on_change)
         ):
+            pipe = None
+            gc.collect()
+        if (
+                pipe is not None
+                and (loaded_width is not None and loaded_height is not None)
+                and (loaded_width != width_t0 or loaded_height != height_t0)
+        ):
+            print("resolution changed, unloading model")
             pipe = None
             gc.collect()
         if current_pipe != "txt2img" or pipe is None:
@@ -1174,6 +1184,8 @@ def generate_click(
                     vae_decoder=cpuvaedec,
                     vae_encoder=None,
                 )
+                loaded_width = width_t0
+                loaded_height = height_t0
             elif textenc_on_cpu:
                 print("Using CPU Text Encoder")
                 cputextenc = OnnxRuntimeModel.from_pretrained(
@@ -1185,6 +1197,8 @@ def generate_click(
                     scheduler=scheduler,
                     text_encoder=cputextenc,
                 )
+                loaded_width = width_t0
+                loaded_height = height_t0
             elif vae_on_cpu:
                 print("Using CPU VAE")
                 cpuvaedec = OnnxRuntimeModel.from_pretrained(
@@ -1197,16 +1211,28 @@ def generate_click(
                     vae_decoder=cpuvaedec,
                     vae_encoder=None,
                 )
+                loaded_width = width_t0
+                loaded_height = height_t0
             else:
                 pipe = OnnxStableDiffusionPipeline.from_pretrained(
                     model_path, provider=provider, scheduler=scheduler
                 )
+                loaded_width = width_t0
+                loaded_height = height_t0
         current_pipe = "txt2img"
     elif current_tab == 1:
         if (
                 current_pipe == ("txt2img" or "inpaint")
                 and release_memory_on_change
         ):
+            pipe = None
+            gc.collect()
+        if (
+                pipe is not None
+                and (loaded_width is not None and loaded_height is not None)
+                and (loaded_width != width_t0 or loaded_height != height_t0)
+        ):
+            print("resolution changed, unloading model")
             pipe = None
             gc.collect()
         if current_pipe != "img2img" or pipe is None:
@@ -1230,6 +1256,8 @@ def generate_click(
                     vae_decoder=cpuvaedec,
                     vae_encoder=cpuvaeenc,
                 )
+                loaded_width = width_t0
+                loaded_height = height_t0
             elif textenc_on_cpu:
                 print("Using CPU Text Encoder")
                 cputextenc = OnnxRuntimeModel.from_pretrained(
@@ -1241,6 +1269,8 @@ def generate_click(
                     scheduler=scheduler,
                     text_encoder=cputextenc,
                 )
+                loaded_width = width_t0
+                loaded_height = height_t0
             elif vae_on_cpu:
                 print("Using CPU VAE")
                 cpuvaedec = OnnxRuntimeModel.from_pretrained(
@@ -1256,16 +1286,28 @@ def generate_click(
                     vae_decoder=cpuvaedec,
                     vae_encoder=cpuvaeenc,
                 )
+                loaded_width = width_t0
+                loaded_height = height_t0
             else:
                 pipe = OnnxStableDiffusionImg2ImgPipeline.from_pretrained(
                     model_path, provider=provider, scheduler=scheduler
                 )
+                loaded_width = width_t0
+                loaded_height = height_t0
         current_pipe = "img2img"
     elif current_tab == 2:
         if (
                 current_pipe == ("txt2img" or "img2img")
                 and release_memory_on_change
         ):
+            pipe = None
+            gc.collect()
+        if (
+                pipe is not None
+                and (loaded_width is not None and loaded_height is not None)
+                and (loaded_width != width_t0 or loaded_height != height_t0)
+        ):
+            print("resolution changed, unloading model")
             pipe = None
             gc.collect()
         if (
@@ -1294,6 +1336,8 @@ def generate_click(
                         vae_decoder=cpuvaedec,
                         vae_encoder=cpuvaeenc,
                     )
+                    loaded_width = width_t0
+                    loaded_height = height_t0
                 elif textenc_on_cpu:
                     print("Using CPU Text Encoder")
                     cputextenc = OnnxRuntimeModel.from_pretrained(
@@ -1305,6 +1349,8 @@ def generate_click(
                         scheduler=scheduler,
                         text_encoder=cputextenc,
                     )
+                    loaded_width = width_t0
+                    loaded_height = height_t0
                 elif vae_on_cpu:
                     print("Using CPU VAE")
                     cpuvaedec = OnnxRuntimeModel.from_pretrained(
@@ -1320,10 +1366,14 @@ def generate_click(
                         vae_decoder=cpuvaedec,
                         vae_encoder=cpuvaeenc,
                     )
+                    loaded_width = width_t0
+                    loaded_height = height_t0
                 else:
                     pipe = OnnxStableDiffusionInpaintPipelineLegacy.from_pretrained(
                         model_path, provider=provider, scheduler=scheduler
                     )
+                    loaded_width = width_t0
+                    loaded_height = height_t0
             else:
                 if textenc_on_cpu and vae_on_cpu:
                     print("Using CPU Text Encoder")
@@ -1345,6 +1395,8 @@ def generate_click(
                         vae_decoder=cpuvaedec,
                         vae_encoder=cpuvaeenc,
                     )
+                    loaded_width = width_t0
+                    loaded_height = height_t0
                 elif textenc_on_cpu:
                     print("Using CPU Text Encoder")
                     cputextenc = OnnxRuntimeModel.from_pretrained(
@@ -1356,6 +1408,8 @@ def generate_click(
                         scheduler=scheduler,
                         text_encoder=cputextenc,
                     )
+                    loaded_width = width_t0
+                    loaded_height = height_t0
                 elif vae_on_cpu:
                     print("Using CPU VAE")
                     cpuvaedec = OnnxRuntimeModel.from_pretrained(
@@ -1364,6 +1418,8 @@ def generate_click(
                     cpuvaeenc = OnnxRuntimeModel.from_pretrained(
                         model_path + "/vae_encoder"
                     )
+                    loaded_width = width_t0
+                    loaded_height = height_t0
                     pipe = OnnxStableDiffusionInpaintPipeline.from_pretrained(
                         model_path,
                         provider=provider,
@@ -1371,10 +1427,14 @@ def generate_click(
                         vae_decoder=cpuvaedec,
                         vae_encoder=cpuvaeenc,
                     )
+                    loaded_width = width_t0
+                    loaded_height = height_t0
                 else:
                     pipe = OnnxStableDiffusionInpaintPipeline.from_pretrained(
                         model_path, provider=provider, scheduler=scheduler
                     )
+                    loaded_width = width_t0
+                    loaded_height = height_t0
         current_pipe = "inpaint"
         current_legacy = legacy_t2
 
@@ -2051,7 +2111,7 @@ if __name__ == "__main__":
                         interactive=True,
                     )
                     clip_interrogator_mode = gr.Radio(
-                        ["Best", "Classic", "Fast"],
+                        ["Best", "Fast", "Classic"],
                         value="Best",
                         label="Interrogate Mode",
                         interactive=True,
