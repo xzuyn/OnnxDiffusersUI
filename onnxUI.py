@@ -1230,7 +1230,7 @@ def generate_click(
         if (
                 pipe is not None
                 and (loaded_width is not None and loaded_height is not None)
-                and (loaded_width != width_t0 or loaded_height != height_t0)
+                and (loaded_width != width_t1 or loaded_height != height_t1)
         ):
             print("resolution changed, unloading model")
             pipe = None
@@ -1256,8 +1256,8 @@ def generate_click(
                     vae_decoder=cpuvaedec,
                     vae_encoder=cpuvaeenc,
                 )
-                loaded_width = width_t0
-                loaded_height = height_t0
+                loaded_width = width_t1
+                loaded_height = height_t1
             elif textenc_on_cpu:
                 print("Using CPU Text Encoder")
                 cputextenc = OnnxRuntimeModel.from_pretrained(
@@ -1269,8 +1269,8 @@ def generate_click(
                     scheduler=scheduler,
                     text_encoder=cputextenc,
                 )
-                loaded_width = width_t0
-                loaded_height = height_t0
+                loaded_width = width_t1
+                loaded_height = height_t1
             elif vae_on_cpu:
                 print("Using CPU VAE")
                 cpuvaedec = OnnxRuntimeModel.from_pretrained(
@@ -1286,14 +1286,14 @@ def generate_click(
                     vae_decoder=cpuvaedec,
                     vae_encoder=cpuvaeenc,
                 )
-                loaded_width = width_t0
-                loaded_height = height_t0
+                loaded_width = width_t1
+                loaded_height = height_t1
             else:
                 pipe = OnnxStableDiffusionImg2ImgPipeline.from_pretrained(
                     model_path, provider=provider, scheduler=scheduler
                 )
-                loaded_width = width_t0
-                loaded_height = height_t0
+                loaded_width = width_t1
+                loaded_height = height_t1
         current_pipe = "img2img"
     elif current_tab == 2:
         if (
@@ -1305,7 +1305,7 @@ def generate_click(
         if (
                 pipe is not None
                 and (loaded_width is not None and loaded_height is not None)
-                and (loaded_width != width_t0 or loaded_height != height_t0)
+                and (loaded_width != width_t2 or loaded_height != height_t2)
         ):
             print("resolution changed, unloading model")
             pipe = None
@@ -1336,8 +1336,8 @@ def generate_click(
                         vae_decoder=cpuvaedec,
                         vae_encoder=cpuvaeenc,
                     )
-                    loaded_width = width_t0
-                    loaded_height = height_t0
+                    loaded_width = width_t2
+                    loaded_height = height_t2
                 elif textenc_on_cpu:
                     print("Using CPU Text Encoder")
                     cputextenc = OnnxRuntimeModel.from_pretrained(
@@ -1349,8 +1349,8 @@ def generate_click(
                         scheduler=scheduler,
                         text_encoder=cputextenc,
                     )
-                    loaded_width = width_t0
-                    loaded_height = height_t0
+                    loaded_width = width_t2
+                    loaded_height = height_t2
                 elif vae_on_cpu:
                     print("Using CPU VAE")
                     cpuvaedec = OnnxRuntimeModel.from_pretrained(
@@ -1366,14 +1366,14 @@ def generate_click(
                         vae_decoder=cpuvaedec,
                         vae_encoder=cpuvaeenc,
                     )
-                    loaded_width = width_t0
-                    loaded_height = height_t0
+                    loaded_width = width_t2
+                    loaded_height = height_t2
                 else:
                     pipe = OnnxStableDiffusionInpaintPipelineLegacy.from_pretrained(
                         model_path, provider=provider, scheduler=scheduler
                     )
-                    loaded_width = width_t0
-                    loaded_height = height_t0
+                    loaded_width = width_t2
+                    loaded_height = height_t2
             else:
                 if textenc_on_cpu and vae_on_cpu:
                     print("Using CPU Text Encoder")
@@ -1395,8 +1395,8 @@ def generate_click(
                         vae_decoder=cpuvaedec,
                         vae_encoder=cpuvaeenc,
                     )
-                    loaded_width = width_t0
-                    loaded_height = height_t0
+                    loaded_width = width_t2
+                    loaded_height = height_t2
                 elif textenc_on_cpu:
                     print("Using CPU Text Encoder")
                     cputextenc = OnnxRuntimeModel.from_pretrained(
@@ -1408,8 +1408,8 @@ def generate_click(
                         scheduler=scheduler,
                         text_encoder=cputextenc,
                     )
-                    loaded_width = width_t0
-                    loaded_height = height_t0
+                    loaded_width = width_t2
+                    loaded_height = height_t2
                 elif vae_on_cpu:
                     print("Using CPU VAE")
                     cpuvaedec = OnnxRuntimeModel.from_pretrained(
@@ -1418,8 +1418,6 @@ def generate_click(
                     cpuvaeenc = OnnxRuntimeModel.from_pretrained(
                         model_path + "/vae_encoder"
                     )
-                    loaded_width = width_t0
-                    loaded_height = height_t0
                     pipe = OnnxStableDiffusionInpaintPipeline.from_pretrained(
                         model_path,
                         provider=provider,
@@ -1427,14 +1425,14 @@ def generate_click(
                         vae_decoder=cpuvaedec,
                         vae_encoder=cpuvaeenc,
                     )
-                    loaded_width = width_t0
-                    loaded_height = height_t0
+                    loaded_width = width_t2
+                    loaded_height = height_t2
                 else:
                     pipe = OnnxStableDiffusionInpaintPipeline.from_pretrained(
                         model_path, provider=provider, scheduler=scheduler
                     )
-                    loaded_width = width_t0
-                    loaded_height = height_t0
+                    loaded_width = width_t2
+                    loaded_height = height_t2
         current_pipe = "inpaint"
         current_legacy = legacy_t2
 
