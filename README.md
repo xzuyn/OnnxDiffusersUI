@@ -13,7 +13,7 @@ I’ve been helping people setup Stable Diffusion and run it on their AMD graphi
 The intent of this UI is to get people started running Stable Diffusion on Windows. As such this UI won't be as feature rich as other UI, nor will it be as fast as running Stable Diffusion on Linux and ROCm.
 
 Example screenshot:  
-![example screenshot using waifu diffusion model](images/Screenshot2.png)
+![example screenshot using waifu diffusion model](images/onnxui.png)
 
 Example img2img loopback (first image is the input, then loopbacked at 0.25 denoise [16 step DEIS]):
 ![example screenshot using img2img loopback](images/none%20Chart.jpg)
