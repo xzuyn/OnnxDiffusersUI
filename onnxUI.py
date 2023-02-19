@@ -38,31 +38,31 @@ from PIL import Image, PngImagePlugin
 
 # gradio function
 def run_diffusers(
-    prompt: str,
-    neg_prompt: Optional[str],
-    init_image: Optional[PIL.Image.Image],
-    init_mask: Optional[PIL.Image.Image],
-    iteration_count: int,
-    batch_size: int,
-    steps: int,
-    guidance_scale: float,
-    height: int,
-    width: int,
-    eta: float,
-    denoise_strength: Optional[float],
-    seed: str,
-    image_format: str,
-    legacy: bool,
-    savemask: bool,
-    video: bool,
-    fps: float,
-    firststep: int,
-    laststep: int,
-    loopback: bool,
-    loopback_halving: bool,
-    colortransfer: bool,
-    transfer_methods: str,
-    transfer_amounts: str,
+        prompt: str,
+        neg_prompt: Optional[str],
+        init_image: Optional[PIL.Image.Image],
+        init_mask: Optional[PIL.Image.Image],
+        iteration_count: int,
+        batch_size: int,
+        steps: int,
+        guidance_scale: float,
+        height: int,
+        width: int,
+        eta: float,
+        denoise_strength: Optional[float],
+        seed: str,
+        image_format: str,
+        legacy: bool,
+        savemask: bool,
+        video: bool,
+        fps: float,
+        firststep: int,
+        laststep: int,
+        loopback: bool,
+        loopback_halving: bool,
+        colortransfer: bool,
+        transfer_methods: str,
+        transfer_amounts: str,
 ) -> Tuple[list, str]:
     global model_name
     global current_pipe
@@ -201,7 +201,7 @@ def run_diffusers(
                                 steps = steps * 2
 
                             if (steps > 1000) and (
-                                sched_name == "DPMSM" or "DPMSS" or "DEIS"
+                                    sched_name == "DPMSM" or "DPMSS" or "DEIS"
                             ):
                                 steps = 1000
                                 print("limited steps to 1000")
@@ -296,18 +296,18 @@ def run_diffusers(
 
             # img2img color transfer
             if (
-                colortransfer is True
-                and loopback is False
-                and current_pipe == "img2img"
+                    colortransfer is True
+                    and loopback is False
+                    and current_pipe == "img2img"
             ):
                 for j in range(batch_size):
                     batch_images[j] = transfer_colour(
                         init_image, batch_images[j], transfer_methods
                     )
             elif (
-                colortransfer is True
-                and loopback is True
-                and current_pipe == "img2img"
+                    colortransfer is True
+                    and loopback is True
+                    and current_pipe == "img2img"
             ):
                 for j in range(batch_size):
                     batch_images[j] = transfer_colour(
@@ -315,9 +315,9 @@ def run_diffusers(
                     )
                 loopback_image = batch_images[0]
             elif (
-                colortransfer is False
-                and loopback is True
-                and current_pipe == "img2img"
+                    colortransfer is False
+                    and loopback is True
+                    and current_pipe == "img2img"
             ):
                 loopback_image = batch_images[0]
 
@@ -447,7 +447,7 @@ def run_diffusers(
             ffmpeg_start = firststep
             reversed_or_not = ""
         for step in range(
-            firststep, (laststep + step_direction), step_direction
+                firststep, (laststep + step_direction), step_direction
         ):
             print(f"step {step}/{laststep} for video frames")
 
@@ -457,16 +457,16 @@ def run_diffusers(
                 short_prompt[:64] if len(short_prompt) > 32 else short_prompt
             )
             frames_path = (
-                output_path + f"/videoframes/"
-                f"{short_prompt}_"
-                f"{seed}_"
-                f"{guidance_scale}g_"
-                f"{width}x"
-                f"{height}_"
-                f"{firststep}-"
-                f"{laststep}s_"
-                f"{sched_short_name}_"
-                f"{fps}fps"
+                    output_path + f"/videoframes/"
+                                  f"{short_prompt}_"
+                                  f"{seed}_"
+                                  f"{guidance_scale}g_"
+                                  f"{width}x"
+                                  f"{height}_"
+                                  f"{firststep}-"
+                                  f"{laststep}s_"
+                                  f"{sched_short_name}_"
+                                  f"{fps}fps"
             )
             os.makedirs(frames_path, exist_ok=True)
 
@@ -618,12 +618,12 @@ def run_diffusers(
     time_taken = time_taken / 60.0
     if iteration_count > 1 or video is True:
         status = (
-            f"Run indexes {next_index:06} "
-            f"to {next_index + iteration_count - 1:06} "
-            f"took {time_taken:.1f} minutes "
-            f"to generate {iteration_count} "
-            f"iterations with batch size of {batch_size}. "
-            f"seeds: " + np.array2string(seeds, separator=",")
+                f"Run indexes {next_index:06} "
+                f"to {next_index + iteration_count - 1:06} "
+                f"took {time_taken:.1f} minutes "
+                f"to generate {iteration_count} "
+                f"iterations with batch size of {batch_size}. "
+                f"seeds: " + np.array2string(seeds, separator=",")
         )
     else:
         status = (
@@ -638,16 +638,16 @@ def run_diffusers(
         short_prompt[:64] if len(short_prompt) > 32 else short_prompt
     )
     frames_path = (
-        output_path + f"/videoframes/"
-        f"{short_prompt}_"
-        f"{seed}_"
-        f"{guidance_scale}g_"
-        f"{width}x"
-        f"{height}_"
-        f"{firststep}-"
-        f"{laststep}s_"
-        f"{sched_short_name}_"
-        f"{fps}fps"
+            output_path + f"/videoframes/"
+                          f"{short_prompt}_"
+                          f"{seed}_"
+                          f"{guidance_scale}g_"
+                          f"{width}x"
+                          f"{height}_"
+                          f"{firststep}-"
+                          f"{laststep}s_"
+                          f"{sched_short_name}_"
+                          f"{fps}fps"
     )
 
     if video is True:
@@ -796,15 +796,15 @@ def danbooru_click(extras_image):
         return {interrogate_prompt: newprompt}
 
 
-def clip_interrogator_click(extras_image, clip_model):
+def clip_interrogator_click(extras_image, model, mode):
     global current_tab
 
     # default to Vit-L-14
     CLIP_MODEL = "ViT-L-14/openai"
 
-    if clip_model == "ViT-L-14 (SD 1.*)":
+    if model == "ViT-L-14 (SD 1.*)":
         CLIP_MODEL = "ViT-L-14/openai"
-    elif clip_model == "ViT-H-14 (SD 2.*)":
+    elif model == "ViT-H-14 (SD 2.*)":
         CLIP_MODEL = "ViT-H-14/laion2b_s32b_b79k"
 
     config = Config(
@@ -815,11 +815,18 @@ def clip_interrogator_click(extras_image, clip_model):
         chunk_size=384,
         blip_image_eval_size=512,
     )
-    ci_vitl = Interrogator(config)
-    ci_vitl.clip_model = ci_vitl.clip_model.to("cpu")
-    ci = ci_vitl
 
-    newprompt = ci.interrogate(extras_image)
+    ci_vit = Interrogator(config)
+    ci_vit.clip_model = ci_vit.clip_model.to("cpu")
+    ci = ci_vit
+
+    if mode == "best":
+        newprompt = ci.interrogate(extras_image)
+    elif mode == "classic":
+        newprompt = ci.interrogate_classic(extras_image)
+    elif mode == "fast":
+        newprompt = ci.interrogate_fast(extras_image)
+
     print(newprompt)
     gc.collect()
     if current_tab == 0:
@@ -830,15 +837,15 @@ def clip_interrogator_click(extras_image, clip_model):
         return {interrogate_prompt: newprompt}
 
 
-def clip_interrogator_negative_click(extras_image, clip_model):
+def clip_interrogator_negative_click(extras_image, model, mode):
     global current_tab
 
     # default to Vit-L-14
     CLIP_MODEL = "ViT-L-14/openai"
 
-    if clip_model == "ViT-L-14 (SD 1.*)":
+    if model == "ViT-L-14 (SD 1.*)":
         CLIP_MODEL = "ViT-L-14/openai"
-    elif clip_model == "ViT-H-14 (SD 2.*)":
+    elif model == "ViT-H-14 (SD 2.*)":
         CLIP_MODEL = "ViT-H-14/laion2b_s32b_b79k"
 
     config = Config(
@@ -848,9 +855,9 @@ def clip_interrogator_negative_click(extras_image, clip_model):
         chunk_size=384,
         blip_image_eval_size=512,
     )
-    ci_vitl = Interrogator(config)
-    ci_vitl.clip_model = ci_vitl.clip_model.to("cpu")
-    ci = ci_vitl
+    ci_vit = Interrogator(config)
+    ci_vit.clip_model = ci_vit.clip_model.to("cpu")
+    ci = ci_vit
 
     newnegativeprompt = ci.interrogate_negative(extras_image)
     print(newnegativeprompt)
@@ -979,69 +986,69 @@ def clear_click():
 
 
 def generate_click(
-    model_drop,
-    prompt_t0,
-    neg_prompt_t0,
-    sch_t0,
-    iter_t0,
-    batch_t0,
-    steps_t0,
-    guid_t0,
-    height_t0,
-    width_t0,
-    eta_t0,
-    seed_t0,
-    fmt_t0,
-    video_t0,
-    fps_t0,
-    firststep_t0,
-    laststep_t0,
-    prompt_t1,
-    neg_prompt_t1,
-    image_t1,
-    sch_t1,
-    iter_t1,
-    batch_t1,
-    steps_t1,
-    guid_t1,
-    height_t1,
-    width_t1,
-    eta_t1,
-    denoise_t1,
-    seed_t1,
-    fmt_t1,
-    video_t1,
-    fps_t1,
-    firststep_t1,
-    laststep_t1,
-    loopback_t1,
-    loopback_halving_t1,
-    colortransfer_t1,
-    transfer_methods_t1,
-    transfer_amounts_t1,
-    prompt_t2,
-    neg_prompt_t2,
-    sch_t2,
-    legacy_t2,
-    savemask_t2,
-    image_t2,
-    mask_t2,
-    iter_t2,
-    batch_t2,
-    steps_t2,
-    guid_t2,
-    height_t2,
-    width_t2,
-    eta_t2,
-    seed_t2,
-    fmt_t2,
-    video_t2,
-    fps_t2,
-    firststep_t2,
-    laststep_t2,
-    colortransfer_t2,
-    transfer_methods_t2,
-    transfer_amounts_t2,
+        model_drop,
+        prompt_t0,
+        neg_prompt_t0,
+        sch_t0,
+        iter_t0,
+        batch_t0,
+        steps_t0,
+        guid_t0,
+        height_t0,
+        width_t0,
+        eta_t0,
+        seed_t0,
+        fmt_t0,
+        video_t0,
+        fps_t0,
+        firststep_t0,
+        laststep_t0,
+        prompt_t1,
+        neg_prompt_t1,
+        image_t1,
+        sch_t1,
+        iter_t1,
+        batch_t1,
+        steps_t1,
+        guid_t1,
+        height_t1,
+        width_t1,
+        eta_t1,
+        denoise_t1,
+        seed_t1,
+        fmt_t1,
+        video_t1,
+        fps_t1,
+        firststep_t1,
+        laststep_t1,
+        loopback_t1,
+        loopback_halving_t1,
+        colortransfer_t1,
+        transfer_methods_t1,
+        transfer_amounts_t1,
+        prompt_t2,
+        neg_prompt_t2,
+        sch_t2,
+        legacy_t2,
+        savemask_t2,
+        image_t2,
+        mask_t2,
+        iter_t2,
+        batch_t2,
+        steps_t2,
+        guid_t2,
+        height_t2,
+        width_t2,
+        eta_t2,
+        seed_t2,
+        fmt_t2,
+        video_t2,
+        fps_t2,
+        firststep_t2,
+        laststep_t2,
+        colortransfer_t2,
+        transfer_methods_t2,
+        transfer_amounts_t2,
 ):
     global model_name
     global provider
@@ -1088,47 +1095,50 @@ def generate_click(
             model_path, subfolder="scheduler"
         )
     elif (
-        sched_name == "Euler" and type(scheduler) is not EulerDiscreteScheduler
+            sched_name == "Euler" and type(
+        scheduler) is not EulerDiscreteScheduler
     ):
         scheduler = EulerDiscreteScheduler.from_pretrained(
             model_path, subfolder="scheduler"
         )
     elif (
-        sched_name == "EulerA"
-        and type(scheduler) is not EulerAncestralDiscreteScheduler
+            sched_name == "EulerA"
+            and type(scheduler) is not EulerAncestralDiscreteScheduler
     ):
         scheduler = EulerAncestralDiscreteScheduler.from_pretrained(
             model_path, subfolder="scheduler"
         )
     elif (
-        sched_name == "DPMSM"
-        and type(scheduler) is not DPMSolverMultistepScheduler
+            sched_name == "DPMSM"
+            and type(scheduler) is not DPMSolverMultistepScheduler
     ):
         scheduler = DPMSolverMultistepScheduler.from_pretrained(
             model_path, subfolder="scheduler"
         )
     elif (
-        sched_name == "DPMSS"
-        and type(scheduler) is not DPMSolverSinglestepScheduler
+            sched_name == "DPMSS"
+            and type(scheduler) is not DPMSolverSinglestepScheduler
     ):
         scheduler = DPMSolverSinglestepScheduler.from_pretrained(
             model_path, subfolder="scheduler"
         )
     elif (
-        sched_name == "DEIS" and type(scheduler) is not DEISMultistepScheduler
+            sched_name == "DEIS" and type(
+        scheduler) is not DEISMultistepScheduler
     ):
         scheduler = DEISMultistepScheduler.from_pretrained(
             model_path, subfolder="scheduler"
         )
     elif (
-        sched_name == "KDPM2" and type(scheduler) is not KDPM2DiscreteScheduler
+            sched_name == "KDPM2" and type(
+        scheduler) is not KDPM2DiscreteScheduler
     ):
         scheduler = KDPM2DiscreteScheduler.from_pretrained(
             model_path, subfolder="scheduler"
         )
     elif (
-        sched_name == "KDPM2A"
-        and type(scheduler) is not KDPM2AncestralDiscreteScheduler
+            sched_name == "KDPM2A"
+            and type(scheduler) is not KDPM2AncestralDiscreteScheduler
     ):
         scheduler = KDPM2AncestralDiscreteScheduler.from_pretrained(
             model_path, subfolder="scheduler"
@@ -1141,8 +1151,8 @@ def generate_click(
     # select which pipeline depending on current tab
     if current_tab == 0:
         if (
-            current_pipe == ("img2img" or "inpaint")
-            and release_memory_on_change
+                current_pipe == ("img2img" or "inpaint")
+                and release_memory_on_change
         ):
             pipe = None
             gc.collect()
@@ -1194,8 +1204,8 @@ def generate_click(
         current_pipe = "txt2img"
     elif current_tab == 1:
         if (
-            current_pipe == ("txt2img" or "inpaint")
-            and release_memory_on_change
+                current_pipe == ("txt2img" or "inpaint")
+                and release_memory_on_change
         ):
             pipe = None
             gc.collect()
@@ -1253,15 +1263,15 @@ def generate_click(
         current_pipe = "img2img"
     elif current_tab == 2:
         if (
-            current_pipe == ("txt2img" or "img2img")
-            and release_memory_on_change
+                current_pipe == ("txt2img" or "img2img")
+                and release_memory_on_change
         ):
             pipe = None
             gc.collect()
         if (
-            current_pipe != "inpaint"
-            or pipe is None
-            or current_legacy != legacy_t2
+                current_pipe != "inpaint"
+                or pipe is None
+                or current_legacy != legacy_t2
         ):
             if legacy_t2:
                 if textenc_on_cpu and vae_on_cpu:
@@ -1615,7 +1625,7 @@ if __name__ == "__main__":
         action="store_true",
         default=False,
         help="de-allocate the pipeline and release memory allocated when "
-        "changing pipelines.",
+             "changing pipelines.",
     )
     parser.add_argument(
         "--cpu-textenc",
@@ -2040,6 +2050,12 @@ if __name__ == "__main__":
                         label="CLIP Model",
                         interactive=True,
                     )
+                    clip_interrogator_mode = gr.Radio(
+                        ["Best", "Classic", "Fast"],
+                        value="Best",
+                        label="Interrogate Mode",
+                        interactive=True,
+                    )
                 interrogate_prompt = gr.Textbox(
                     value="", lines=2, label="interrogate prompt result"
                 )
@@ -2121,6 +2137,7 @@ if __name__ == "__main__":
         interrogator_inputs = [
             extras_image,
             clip_interrogator_options,
+            clip_interrogator_mode,
         ]
         all_inputs = [model_drop]
         all_inputs.extend(tab0_inputs)
