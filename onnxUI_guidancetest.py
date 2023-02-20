@@ -525,7 +525,7 @@ def run_diffusers(
                     prompt,
                     negative_prompt=neg_prompt,
                     image=init_image,
-                    num_inference_steps=step,
+                    num_inference_steps=steps,
                     guidance_scale=round(guid, 3),
                     eta=eta,
                     strength=denoise_strength,
@@ -542,7 +542,7 @@ def run_diffusers(
                     mask_image=init_mask,
                     height=height,
                     width=width,
-                    num_inference_steps=step,
+                    num_inference_steps=steps,
                     guidance_scale=round(guid, 3),
                     eta=eta,
                     num_images_per_prompt=batch_size,
@@ -560,9 +560,9 @@ def run_diffusers(
 
             metadata.add_text("Prompt: ", str(prompt))
             metadata.add_text("Negative prompt: ", str(neg_prompt))
-            metadata.add_text("Steps: ", str(step))
+            metadata.add_text("Steps: ", str(steps))
             metadata.add_text("Sampler: ", str(sched_name))
-            metadata.add_text("CFG scale: ", str(guidance_scale))
+            metadata.add_text("CFG scale: ", str(round(guid, 3)))
             metadata.add_text("Seed: ", str(seed))
             metadata.add_text("Size: ", str(f"{width}x{height}"))
             metadata.add_text("Model: ", str(model_name))
