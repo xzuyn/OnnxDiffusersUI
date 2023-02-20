@@ -38,31 +38,31 @@ from PIL import Image, PngImagePlugin
 
 # gradio function
 def run_diffusers(
-    prompt: str,
-    neg_prompt: Optional[str],
-    init_image: Optional[PIL.Image.Image],
-    init_mask: Optional[PIL.Image.Image],
-    iteration_count: int,
-    batch_size: int,
-    steps: int,
-    guidance_scale: float,
-    height: int,
-    width: int,
-    eta: float,
-    denoise_strength: Optional[float],
-    seed: str,
-    image_format: str,
-    legacy: bool,
-    savemask: bool,
-    video: bool,
-    fps: float,
-    firstguid: float,
-    lastguid: float,
-    loopback: bool,
-    loopback_halving: bool,
-    colortransfer: bool,
-    transfer_methods: str,
-    transfer_amounts: str,
+        prompt: str,
+        neg_prompt: Optional[str],
+        init_image: Optional[PIL.Image.Image],
+        init_mask: Optional[PIL.Image.Image],
+        iteration_count: int,
+        batch_size: int,
+        steps: int,
+        guidance_scale: float,
+        height: int,
+        width: int,
+        eta: float,
+        denoise_strength: Optional[float],
+        seed: str,
+        image_format: str,
+        legacy: bool,
+        savemask: bool,
+        video: bool,
+        fps: float,
+        firstguid: float,
+        lastguid: float,
+        loopback: bool,
+        loopback_halving: bool,
+        colortransfer: bool,
+        transfer_methods: str,
+        transfer_amounts: str,
 ) -> Tuple[list, str]:
     global model_name
     global current_pipe
@@ -460,16 +460,16 @@ def run_diffusers(
                 short_prompt[:64] if len(short_prompt) > 32 else short_prompt
             )
             frames_path = (
-                output_path + f"/videoframes/"
-                f"{short_prompt}_"
-                f"{seed}_"
-                f"{steps}s_"
-                f"{width}x"
-                f"{height}_"
-                f"{firstguid}-"
-                f"{lastguid}g_"
-                f"{sched_short_name}_"
-                f"{fps}fps"
+                    output_path + f"/videoframes/"
+                                  f"{short_prompt}_"
+                                  f"{seed}_"
+                                  f"{steps}s_"
+                                  f"{width}x"
+                                  f"{height}_"
+                                  f"{firstguid}-"
+                                  f"{lastguid}g_"
+                                  f"{sched_short_name}_"
+                                  f"{fps}fps"
             )
             os.makedirs(frames_path, exist_ok=True)
 
@@ -525,7 +525,7 @@ def run_diffusers(
                     prompt,
                     negative_prompt=neg_prompt,
                     image=init_image,
-                    num_inference_steps=step,
+                    num_inference_steps=steps,
                     guidance_scale=round(guid, 3),
                     eta=eta,
                     strength=denoise_strength,
@@ -542,7 +542,7 @@ def run_diffusers(
                     mask_image=init_mask,
                     height=height,
                     width=width,
-                    num_inference_steps=step,
+                    num_inference_steps=steps,
                     guidance_scale=round(guid, 3),
                     eta=eta,
                     num_images_per_prompt=batch_size,
@@ -560,9 +560,9 @@ def run_diffusers(
 
             metadata.add_text("Prompt: ", str(prompt))
             metadata.add_text("Negative prompt: ", str(neg_prompt))
-            metadata.add_text("Steps: ", str(step))
+            metadata.add_text("Steps: ", str(steps))
             metadata.add_text("Sampler: ", str(sched_name))
-            metadata.add_text("CFG scale: ", str(guidance_scale))
+            metadata.add_text("CFG scale: ", str(round(guid, 3)))
             metadata.add_text("Seed: ", str(seed))
             metadata.add_text("Size: ", str(f"{width}x{height}"))
             metadata.add_text("Model: ", str(model_name))
@@ -641,16 +641,16 @@ def run_diffusers(
         short_prompt[:64] if len(short_prompt) > 32 else short_prompt
     )
     frames_path = (
-        output_path + f"/videoframes/"
-        f"{short_prompt}_"
-        f"{seed}_"
-        f"{steps}s_"
-        f"{width}x"
-        f"{height}_"
-        f"{firstguid}-"
-        f"{lastguid}g_"
-        f"{sched_short_name}_"
-        f"{fps}fps"
+            output_path + f"/videoframes/"
+                          f"{short_prompt}_"
+                          f"{seed}_"
+                          f"{steps}s_"
+                          f"{width}x"
+                          f"{height}_"
+                          f"{firstguid}-"
+                          f"{lastguid}g_"
+                          f"{sched_short_name}_"
+                          f"{fps}fps"
     )
 
     if video is True:
@@ -987,69 +987,69 @@ def clear_click():
 
 
 def generate_click(
-    model_drop,
-    prompt_t0,
-    neg_prompt_t0,
-    sch_t0,
-    iter_t0,
-    batch_t0,
-    steps_t0,
-    guid_t0,
-    height_t0,
-    width_t0,
-    eta_t0,
-    seed_t0,
-    fmt_t0,
-    video_t0,
-    fps_t0,
-    firstguid_t0,
-    lastguid_t0,
-    prompt_t1,
-    neg_prompt_t1,
-    image_t1,
-    sch_t1,
-    iter_t1,
-    batch_t1,
-    steps_t1,
-    guid_t1,
-    height_t1,
-    width_t1,
-    eta_t1,
-    denoise_t1,
-    seed_t1,
-    fmt_t1,
-    video_t1,
-    fps_t1,
-    firstguid_t1,
-    lastguid_t1,
-    loopback_t1,
-    loopback_halving_t1,
-    colortransfer_t1,
-    transfer_methods_t1,
-    transfer_amounts_t1,
-    prompt_t2,
-    neg_prompt_t2,
-    sch_t2,
-    legacy_t2,
-    savemask_t2,
-    image_t2,
-    mask_t2,
-    iter_t2,
-    batch_t2,
-    steps_t2,
-    guid_t2,
-    height_t2,
-    width_t2,
-    eta_t2,
-    seed_t2,
-    fmt_t2,
-    video_t2,
-    fps_t2,
-    firstguid_t2,
-    lastguid_t2,
-    colortransfer_t2,
-    transfer_methods_t2,
-    transfer_amounts_t2,
+        model_drop,
+        prompt_t0,
+        neg_prompt_t0,
+        sch_t0,
+        iter_t0,
+        batch_t0,
+        steps_t0,
+        guid_t0,
+        height_t0,
+        width_t0,
+        eta_t0,
+        seed_t0,
+        fmt_t0,
+        video_t0,
+        fps_t0,
+        firstguid_t0,
+        lastguid_t0,
+        prompt_t1,
+        neg_prompt_t1,
+        image_t1,
+        sch_t1,
+        iter_t1,
+        batch_t1,
+        steps_t1,
+        guid_t1,
+        height_t1,
+        width_t1,
+        eta_t1,
+        denoise_t1,
+        seed_t1,
+        fmt_t1,
+        video_t1,
+        fps_t1,
+        firstguid_t1,
+        lastguid_t1,
+        loopback_t1,
+        loopback_halving_t1,
+        colortransfer_t1,
+        transfer_methods_t1,
+        transfer_amounts_t1,
+        prompt_t2,
+        neg_prompt_t2,
+        sch_t2,
+        legacy_t2,
+        savemask_t2,
+        image_t2,
+        mask_t2,
+        iter_t2,
+        batch_t2,
+        steps_t2,
+        guid_t2,
+        height_t2,
+        width_t2,
+        eta_t2,
+        seed_t2,
+        fmt_t2,
+        video_t2,
+        fps_t2,
+        firstguid_t2,
+        lastguid_t2,
+        colortransfer_t2,
+        transfer_methods_t2,
+        transfer_amounts_t2,
 ):
     global model_name
     global provider
