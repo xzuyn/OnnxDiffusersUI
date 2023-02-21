@@ -923,6 +923,11 @@ def latent_upscaling(image):
     print("placeholder")
 
 
+# TODO: add stable diffusion x4 upscaling
+def stablediffusion_upscaling(image):
+    print("placeholder")
+
+
 def clear_click():
     global current_tab
     if current_tab == 0:
