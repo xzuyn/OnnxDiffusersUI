@@ -919,6 +919,11 @@ def hires_fix(image):
     print("placeholder")
 
 
+# TODO: add latent upscaling
+def latent_upscaling(image):
+    print("placeholder")
+
+
 def clear_click():
     global current_tab
     if current_tab == 0:
