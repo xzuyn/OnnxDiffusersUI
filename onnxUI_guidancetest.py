@@ -437,6 +437,7 @@ def run_diffusers(
             time_taken = time_taken + (finish - start)
 
     # video
+    # TODO: move to video_parameter_select function
     elif video is True:
         if firstguid > lastguid:
             guid_direction = -0.01
@@ -907,7 +908,14 @@ def transfer_colour(input_image, output_image, transfer_methods):
     return image_transfer
 
 
+# TODO: move video section here
+# TODO: add ability to select different video options (guidance, steps, etc)
 def video_parameter_select(video_parameter):
+    print("placeholder")
+
+
+# TODO: add hires fix which uses img2img after txt2img
+def hires_fix(image):
     print("placeholder")
 
 
@@ -2087,6 +2095,7 @@ if __name__ == "__main__":
                             interactive=False,
                         )
             with gr.Column(scale=11, min_width=550):
+                # TODO: add live preview window
                 image_out = gr.Gallery(value=None, label="output images")
                 status_out = gr.Textbox(value="", label="status")
                 extras_image = gr.Image(
