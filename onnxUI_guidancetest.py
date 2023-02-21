@@ -638,7 +638,7 @@ def run_diffusers(
     short_prompt = prompt.strip('<>:"/\\|?*\n\t')
     short_prompt = re.sub(r'[\\/*?:"<>|\n\t]', "", short_prompt)
     short_prompt = (
-        short_prompt[:64] if len(short_prompt) > 32 else short_prompt
+        short_prompt[:50] if len(short_prompt) > 32 else short_prompt
     )
     frames_path = (
             output_path + f"/videoframes/"
