@@ -275,7 +275,7 @@ def run_diffusers(
             short_prompt = prompt.strip('<>:"/\\|?*\n\t')
             short_prompt = re.sub(r'[\\/*?:"<>|\n\t]', "", short_prompt)
             short_prompt = (
-                short_prompt[:64] if len(short_prompt) > 64 else short_prompt
+                short_prompt[:50] if len(short_prompt) > 64 else short_prompt
             )
 
             metadata = PngImagePlugin.PngInfo()
@@ -439,11 +439,11 @@ def run_diffusers(
     # video
     elif video is True:
         if firstguid > lastguid:
-            guid_direction = -0.05
+            guid_direction = -0.01
             ffmpeg_start = lastguid
             reversed_or_not = " -vf reverse"
         else:
-            guid_direction = 0.05
+            guid_direction = 0.01
             ffmpeg_start = firstguid
             reversed_or_not = ""
 
@@ -457,7 +457,7 @@ def run_diffusers(
             short_prompt = prompt.strip('<>:"/\\|?*\n\t')
             short_prompt = re.sub(r'[\\/*?:"<>|\n\t]', "", short_prompt)
             short_prompt = (
-                short_prompt[:64] if len(short_prompt) > 32 else short_prompt
+                short_prompt[:50] if len(short_prompt) > 32 else short_prompt
             )
             frames_path = (
                     output_path + f"/videoframes/"
@@ -553,7 +553,7 @@ def run_diffusers(
             short_prompt = prompt.strip('<>:"/\\|?*\n\t')
             short_prompt = re.sub(r'[\\/*?:"<>|\n\t]', "", short_prompt)
             short_prompt = (
-                short_prompt[:64] if len(short_prompt) > 32 else short_prompt
+                short_prompt[:50] if len(short_prompt) > 32 else short_prompt
             )
 
             metadata = PngImagePlugin.PngInfo()
