@@ -438,6 +438,8 @@ def run_diffusers(
 
     # video
     # TODO: move to video_parameter_select function
+    # TODO: pixel compare image vs previous image to weed out corrupted results
+    # TODO: add option to select parameter step amount
     elif video is True:
         if firstguid > lastguid:
             guid_direction = -0.01
