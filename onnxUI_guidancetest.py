@@ -1866,18 +1866,18 @@ if __name__ == "__main__":
                     )
                     with gr.Row():
                         firstguid_t0 = gr.Slider(
-                            1.05,
+                            1.01,
                             50,
-                            value=1.05,
-                            step=0.05,
+                            value=1.01,
+                            step=0.01,
                             label="first guid",
                             interactive=False,
                         )
                         lastguid_t0 = gr.Slider(
-                            1.05,
+                            1.01,
                             50,
                             value=7.5,
-                            step=0.05,
+                            step=0.01,
                             label="last guid",
                             interactive=False,
                         )
@@ -1966,18 +1966,18 @@ if __name__ == "__main__":
                     )
                     with gr.Row():
                         firstguid_t1 = gr.Slider(
-                            1.05,
+                            1.01,
                             50,
-                            value=1.05,
-                            step=0.05,
+                            value=1.01,
+                            step=0.01,
                             label="first guid",
                             interactive=False,
                         )
                         lastguid_t1 = gr.Slider(
-                            1.05,
+                            1.01,
                             50,
                             value=7.5,
-                            step=0.05,
+                            step=0.01,
                             label="last guid",
                             interactive=False,
                         )
@@ -2071,18 +2071,18 @@ if __name__ == "__main__":
                     )
                     with gr.Row():
                         firstguid_t2 = gr.Slider(
-                            1.05,
+                            1.01,
                             50,
-                            value=1.05,
-                            step=0.05,
+                            value=1.01,
+                            step=0.01,
                             label="first guid",
                             interactive=False,
                         )
                         lastguid_t2 = gr.Slider(
-                            1.05,
+                            1.01,
                             50,
                             value=7.5,
-                            step=0.05,
+                            step=0.01,
                             label="last guid",
                             interactive=False,
                         )
