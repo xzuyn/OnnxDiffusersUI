@@ -142,6 +142,7 @@ def run_diffusers(
         for i in range(iteration_count):
             print(f"iteration {i + 1}/{iteration_count}")
 
+            # TODO: set steps to unadjusted step value for history and metadata
             info = (
                 f"{next_index + i:06} | "
                 f"prompt: {prompt} "
@@ -504,6 +505,7 @@ def run_diffusers(
             if image_number is None:
                 image_number = 1
 
+            # TODO: set steps to unadjusted step value for history and metadata
             info = (
                 f"{next_index + image_number:06} | "
                 f"prompt: {prompt} "
@@ -1994,10 +1996,10 @@ if __name__ == "__main__":
                         1.01, 50, value=3.5, step=0.01, label="guidance"
                     )
                     width_t0 = gr.Slider(
-                        256, 2048, value=512, step=64, label="width"
+                        192, 2048, value=512, step=64, label="width"
                     )
                     height_t0 = gr.Slider(
-                        256, 2048, value=512, step=64, label="height"
+                        192, 2048, value=512, step=64, label="height"
                     )
                     eta_t0 = gr.Slider(
                         0,
@@ -2013,7 +2015,8 @@ if __name__ == "__main__":
                             ["png", "jpg"], value="png", label="image format"
                         )
                         hiresfix_t0 = gr.Checkbox(
-                            value=False, label="hiresfix"
+                            value=False, label="hiresfix (iterations "
+                                               "unavailable currently)"
                         )
                     with gr.Row():
                         video_t0 = gr.Checkbox(
@@ -2095,10 +2098,10 @@ if __name__ == "__main__":
                         1.01, 50, value=3.5, step=0.01, label="guidance"
                     )
                     width_t1 = gr.Slider(
-                        256, 2048, value=512, step=64, label="width"
+                        192, 2048, value=512, step=64, label="width"
                     )
                     height_t1 = gr.Slider(
-                        256, 2048, value=512, step=64, label="height"
+                        192, 2048, value=512, step=64, label="height"
                     )
                     denoise_t1 = gr.Slider(
                         0, 1, value=0.75, step=0.01, label="denoise strength"
@@ -2203,10 +2206,10 @@ if __name__ == "__main__":
                         1.01, 50, value=3.5, step=0.01, label="guidance"
                     )
                     width_t2 = gr.Slider(
-                        256, 2048, value=512, step=64, label="width"
+                        192, 2048, value=512, step=64, label="width"
                     )
                     height_t2 = gr.Slider(
-                        256, 2048, value=512, step=64, label="height"
+                        192, 2048, value=512, step=64, label="height"
                     )
                     eta_t2 = gr.Slider(
                         0,
