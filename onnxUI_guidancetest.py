@@ -910,6 +910,21 @@ def transfer_colour(input_image, output_image, transfer_methods):
     return image_transfer
 
 
+def compare_pixels(png1, png2):
+    pixels1 = list(png1.getdata())
+    pixels2 = list(png2.getdata())
+    if len(pixels1) != len(pixels2):
+        return -1  # different pixel count
+    match = 0
+    mismatch = 0
+    for i in range(0, len(pixels1)):
+        if pixels1[i] == pixels2[i]:
+            match = match + 1
+        else:
+            mismatch = mismatch + 1
+    return match / (match + mismatch)
+
+
 # TODO: move video section here
 # TODO: add ability to select different video options (guidance, steps, etc)
 def video_parameter_select(video_parameter):
@@ -1728,6 +1743,8 @@ if __name__ == "__main__":
     current_tab = 0
     current_pipe = "txt2img"
     current_legacy = False
+    img1 = None
+    img2 = None
     release_memory_after_generation = args.release_memory_after_generation
     release_memory_on_change = args.release_memory_on_change
     textenc_on_cpu = args.cpu_textenc
