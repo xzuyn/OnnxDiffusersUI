@@ -181,6 +181,7 @@ def run_diffusers(
                 ).images
                 if hiresfix is True:
                     # TODO: add option to not deallocate pipe
+                    # TODO: fix iterations
                     pipe = None
                     gc.collect()
                     batch_images = hires_fix(
