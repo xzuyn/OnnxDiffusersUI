@@ -2030,7 +2030,7 @@ if __name__ == "__main__":
                                                "unavailable currently)"
                         )
                         hiresvalue_t0 = gr.Slider(
-                            1.25,
+                            1.125,
                             2.5,
                             value=1.75,
                             step=0.125,
