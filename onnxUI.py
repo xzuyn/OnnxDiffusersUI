@@ -63,6 +63,7 @@ def run_diffusers(
         colortransfer: bool,
         transfer_methods: str,
         transfer_amounts: str,
+        hiresfix: bool,
 ) -> Tuple[list, str]:
     global model_name
     global current_pipe
@@ -177,6 +178,23 @@ def run_diffusers(
                     num_images_per_prompt=batch_size,
                     generator=rng,
                 ).images
+                if hiresfix is True:
+                    pipe = None
+                    gc.collect()
+                    batch_images = hires_fix(
+                        prompt,
+                        neg_prompt,
+                        height,
+                        width,
+                        batch_images[0],
+                        steps,
+                        guidance_scale,
+                        eta,
+                        0.75,
+                        batch_size,
+                        rng,
+                        1.75,
+                    )
                 finish = time.time()
             elif current_pipe == "img2img":
                 start = time.time()
@@ -930,9 +948,128 @@ def video_parameter_select(video_parameter):
     print("placeholder")
 
 
-# TODO: add hires fix which uses img2img after txt2img
-def hires_fix(image):
-    print("placeholder")
+def hires_fix(
+        prompt,
+        neg_prompt,
+        height,
+        width,
+        lowres,
+        steps,
+        guidance_scale,
+        eta,
+        denoise_strength,
+        batch_size,
+        rng,
+        scale,
+):
+    global pipe
+    global textenc_on_cpu
+    global vae_on_cpu
+
+    print("running hiresfix")
+
+    if textenc_on_cpu and vae_on_cpu:
+        print("Using CPU Text Encoder")
+        print("Using CPU VAE")
+        cputextenc = OnnxRuntimeModel.from_pretrained(
+            model_path + "/text_encoder"
+        )
+        cpuvaedec = OnnxRuntimeModel.from_pretrained(
+            model_path + "/vae_decoder"
+        )
+        cpuvaeenc = OnnxRuntimeModel.from_pretrained(
+            model_path + "/vae_encoder"
+        )
+        pipe = OnnxStableDiffusionImg2ImgPipeline.from_pretrained(
+            model_path,
+            provider=provider,
+            scheduler=scheduler,
+            text_encoder=cputextenc,
+            vae_decoder=cpuvaedec,
+            vae_encoder=cpuvaeenc,
+        )
+    elif textenc_on_cpu:
+        print("Using CPU Text Encoder")
+        cputextenc = OnnxRuntimeModel.from_pretrained(
+            model_path + "/text_encoder"
+        )
+        pipe = OnnxStableDiffusionImg2ImgPipeline.from_pretrained(
+            model_path,
+            provider=provider,
+            scheduler=scheduler,
+            text_encoder=cputextenc,
+        )
+    elif vae_on_cpu:
+        print("Using CPU VAE")
+        cpuvaedec = OnnxRuntimeModel.from_pretrained(
+            model_path + "/vae_decoder"
+        )
+        cpuvaeenc = OnnxRuntimeModel.from_pretrained(
+            model_path + "/vae_encoder"
+        )
+        pipe = OnnxStableDiffusionImg2ImgPipeline.from_pretrained(
+            model_path,
+            provider=provider,
+            scheduler=scheduler,
+            vae_decoder=cpuvaedec,
+            vae_encoder=cpuvaeenc,
+        )
+
+    lowres_scaled = resize_and_crop(
+        lowres,
+        int(height * scale),
+        int(width * scale)
+    )
+
+    # adjust steps to account for denoise
+    steps_old = steps
+    steps = ceil(steps / denoise_strength)
+    if (steps > 1000) and (sch_t1 == "DPMSM" or "DPMSS" or "DEIS"):
+        steps_unreduced = steps
+        steps = 1000
+        print()
+        print(
+            f"Adjusting steps to account for denoise. From {steps_old} "
+            f"to {steps_unreduced} steps internally."
+        )
+        print(
+            f"Without adjustment the actual step count would be "
+            f"~{ceil(steps_old * denoise_t1)} steps."
+        )
+        print()
+        print(
+            f"INTERNAL STEP COUNT EXCEEDS 1000 MAX FOR DPMSM, DPMSS, "
+            f"or DEIS. INTERNAL STEPS WILL BE REDUCED TO 1000."
+        )
+        print()
+    else:
+        print()
+        print(
+            f"Adjusting steps to account for denoise. From {steps_old} "
+            f"to {steps} steps internally."
+        )
+        print(
+            f"Without adjustment the actual step count would be "
+            f"~{ceil(steps_old * denoise_strength)} steps."
+        )
+        print()
+
+    hires_image = pipe(
+        prompt,
+        negative_prompt=neg_prompt,
+        image=lowres_scaled,
+        num_inference_steps=steps,
+        guidance_scale=guidance_scale,
+        eta=eta,
+        strength=denoise_strength,
+        num_images_per_prompt=batch_size,
+        generator=rng,
+    ).images
+
+    pipe = None
+    gc.collect()
+
+    return hires_image
 
 
 # TODO: add latent upscaling
@@ -965,6 +1102,7 @@ def clear_click():
             fps_t0: 5,
             firststep_t0: 1,
             laststep_t0: 32,
+            hiresfix_t0: False,
         }
     elif current_tab == 1:
         return {
@@ -1038,6 +1176,7 @@ def generate_click(
         fps_t0,
         firststep_t0,
         laststep_t0,
+        hiresfix_t0,
         prompt_t1,
         neg_prompt_t1,
         image_t1,
@@ -1096,6 +1235,7 @@ def generate_click(
     global pipe
     global loaded_width
     global loaded_height
+    global model_path
 
     # reset scheduler and pipeline if model is different
     if model_name != model_drop:
@@ -1515,6 +1655,7 @@ def generate_click(
             False,
             transfer_methods_t1,
             transfer_amounts_t1,
+            hiresfix_t0,
         )
     elif current_tab == 1:
         # input image resizing
@@ -1580,6 +1721,7 @@ def generate_click(
             colortransfer_t1,
             transfer_methods_t1,
             transfer_amounts_t1,
+            False,
         )
     elif current_tab == 2:
         input_image = image_t2["image"].convert("RGB")
@@ -1638,6 +1780,7 @@ def generate_click(
             colortransfer_t2,
             transfer_methods_t2,
             transfer_amounts_t2,
+            False,
         )
 
     gc.collect()
@@ -1883,9 +2026,13 @@ if __name__ == "__main__":
                         interactive=False,
                     )
                     seed_t0 = gr.Textbox(value="", max_lines=1, label="seed")
-                    fmt_t0 = gr.Radio(
-                        ["png", "jpg"], value="png", label="image format"
-                    )
+                    with gr.Row():
+                        fmt_t0 = gr.Radio(
+                            ["png", "jpg"], value="png", label="image format"
+                        )
+                        hiresfix_t0 = gr.Checkbox(
+                            value=False, label="hiresfix"
+                        )
                     with gr.Row():
                         video_t0 = gr.Checkbox(
                             value=False, label="create video"
@@ -2177,6 +2324,7 @@ if __name__ == "__main__":
             fps_t0,
             firststep_t0,
             laststep_t0,
+            hiresfix_t0,
         ]
         tab1_inputs = [
             prompt_t1,
