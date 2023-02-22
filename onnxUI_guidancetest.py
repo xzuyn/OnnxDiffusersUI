@@ -1743,8 +1743,6 @@ if __name__ == "__main__":
     current_tab = 0
     current_pipe = "txt2img"
     current_legacy = False
-    img1 = None
-    img2 = None
     release_memory_after_generation = args.release_memory_after_generation
     release_memory_on_change = args.release_memory_on_change
     textenc_on_cpu = args.cpu_textenc
