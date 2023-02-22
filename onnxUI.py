@@ -64,6 +64,8 @@ def run_diffusers(
         transfer_methods: str,
         transfer_amounts: str,
         hiresfix: bool,
+        hiresvalue: float,
+        hiresdenoise: float,
 ) -> Tuple[list, str]:
     global model_name
     global current_pipe
@@ -193,10 +195,10 @@ def run_diffusers(
                         steps,
                         guidance_scale,
                         eta,
-                        0.75,
+                        hiresdenoise,
                         batch_size,
                         rng,
-                        1.75,
+                        hiresvalue,
                     )
                 finish = time.time()
             elif current_pipe == "img2img":
@@ -1007,7 +1009,6 @@ def step_adjustment(unadjusted_steps, denoise, pipeline):
     return steps
 
 
-# TODO: add custom denoise value
 def hires_fix(
         prompt,
         neg_prompt,
@@ -1026,7 +1027,7 @@ def hires_fix(
     global textenc_on_cpu
     global vae_on_cpu
 
-    print("running hiresfix")
+    print(f"running hiresfix at {scale}x [{denoise_strength} denoise]")
 
     if textenc_on_cpu and vae_on_cpu:
         print("Using CPU Text Encoder")
@@ -1132,6 +1133,8 @@ def clear_click():
             firststep_t0: 1,
             laststep_t0: 32,
             hiresfix_t0: False,
+            hiresvalue_t0: 1.75,
+            hiresdenoise_t0: 0.75,
         }
     elif current_tab == 1:
         return {
@@ -1206,6 +1209,8 @@ def generate_click(
         firststep_t0,
         laststep_t0,
         hiresfix_t0,
+        hiresvalue_t0,
+        hiresdenoise_t0,
         prompt_t1,
         neg_prompt_t1,
         image_t1,
@@ -1685,6 +1690,8 @@ def generate_click(
             transfer_methods_t1,
             transfer_amounts_t1,
             hiresfix_t0,
+            hiresvalue_t0,
+            hiresdenoise_t0,
         )
     elif current_tab == 1:
         # input image resizing
@@ -1720,6 +1727,8 @@ def generate_click(
             transfer_methods_t1,
             transfer_amounts_t1,
             False,
+            0,
+            0,
         )
     elif current_tab == 2:
         input_image = image_t2["image"].convert("RGB")
@@ -1765,6 +1774,8 @@ def generate_click(
             transfer_methods_t2,
             transfer_amounts_t2,
             False,
+            0,
+            0,
         )
 
     gc.collect()
@@ -2010,13 +2021,27 @@ if __name__ == "__main__":
                         interactive=False,
                     )
                     seed_t0 = gr.Textbox(value="", max_lines=1, label="seed")
+                    fmt_t0 = gr.Radio(
+                        ["png", "jpg"], value="png", label="image format"
+                    )
                     with gr.Row():
-                        fmt_t0 = gr.Radio(
-                            ["png", "jpg"], value="png", label="image format"
-                        )
                         hiresfix_t0 = gr.Checkbox(
                             value=False, label="hiresfix (iterations "
                                                "unavailable currently)"
+                        )
+                        hiresvalue_t0 = gr.Slider(
+                            1.25,
+                            2.5,
+                            value=1.75,
+                            step=0.125,
+                            label="hires value",
+                        )
+                        hiresdenoise_t0 = gr.Slider(
+                            0,
+                            1,
+                            value=0.75,
+                            step=0.01,
+                            label="hires denoise",
                         )
                     with gr.Row():
                         video_t0 = gr.Checkbox(
@@ -2310,6 +2335,8 @@ if __name__ == "__main__":
             firststep_t0,
             laststep_t0,
             hiresfix_t0,
+            hiresvalue_t0,
+            hiresdenoise_t0,
         ]
         tab1_inputs = [
             prompt_t1,
