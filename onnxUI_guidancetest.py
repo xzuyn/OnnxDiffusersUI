@@ -32,7 +32,7 @@ from PIL import Image
 
 import lpw_pipe
 
-# We want to safe data to PNG
+# We want to save data to PNG
 from PIL import Image, PngImagePlugin
 
 
