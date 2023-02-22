@@ -32,7 +32,7 @@ from PIL import Image
 
 import lpw_pipe
 
-# We want to safe data to PNG
+# We want to save data to PNG
 from PIL import Image, PngImagePlugin
 
 
@@ -984,8 +984,8 @@ def step_adjustment(unadjusted_steps, denoise, pipeline):
                 f"~{ceil(steps_old * denoise)} steps."
             )
             print()
+    # adjust steps to account for legacy inpaint only using ~80% of set steps
     elif pipeline == "inpaint":
-        # adjust steps to account for legacy inpaint only using ~80% of set steps
         steps_old = unadjusted_steps
         if unadjusted_steps < 5:
             steps = unadjusted_steps + 1
