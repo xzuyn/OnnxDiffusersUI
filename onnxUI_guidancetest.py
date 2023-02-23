@@ -745,13 +745,13 @@ def resize_and_crop(input_image: PIL.Image.Image, height: int, width: int):
     input_width, input_height = input_image.size
     if height / width > input_height / input_width:
         adjust_width = int(input_width * height / input_height)
-        input_image = input_image.resize((adjust_width, height))
+        input_image = input_image.resize((adjust_width, height), Image.LANCZOS)
         left = (adjust_width - width) // 2
         right = left + width
         input_image = input_image.crop((left, 0, right, height))
     else:
         adjust_height = int(input_height * width / input_width)
-        input_image = input_image.resize((width, adjust_height))
+        input_image = input_image.resize((width, adjust_height), Image.LANCZOS)
         top = (adjust_height - height) // 2
         bottom = top + height
         input_image = input_image.crop((0, top, width, bottom))
@@ -2032,7 +2032,7 @@ if __name__ == "__main__":
                         )
                         hiresvalue_t0 = gr.Slider(
                             1.125,
-                            2.5,
+                            4,
                             value=1.75,
                             step=0.125,
                             label="hires value",
