@@ -200,7 +200,7 @@ def run_diffusers(
                         batch_size,
                         rng,
                         hiresvalue,
-                        True,
+                        hireslatent,
                         True,
                     )
                 finish = time.time()
@@ -1036,57 +1036,58 @@ def hires_fix(
     global vae_on_cpu
     global img2img
 
-    if uselatentscaler is True and scale <= 2:
-        lowres = latent_upscaler(
-            lowres,
-            prompt,
-            neg_prompt,
-            0,
-            steps,
-            True,
-        )
-    elif uselatentscaler is True and (2 < scale < 4):
-        lowres = latent_upscaler(
-            lowres,
-            prompt,
-            neg_prompt,
-            0,
-            steps,
-            False,
-        )
-        lowres = latent_upscaler(
-            lowres,
-            prompt,
-            neg_prompt,
-            0,
-            steps,
-            True,
-        )
-    elif uselatentscaler is True and scale >= 4:
-        lowres = latent_upscaler(
-            lowres,
-            prompt,
-            neg_prompt,
-            0,
-            steps,
-            False,
-        )
-        lowres = latent_upscaler(
-            lowres,
-            prompt,
-            neg_prompt,
-            0,
-            steps,
-            False,
-        )
-        lowres = latent_upscaler(
-            lowres,
-            prompt,
-            neg_prompt,
-            0,
-            steps,
-            True,
-        )
+    if uselatentscaler is True:
+        if scale <= 2:
+            lowres = latent_upscaler(
+                lowres,
+                prompt,
+                neg_prompt,
+                0,
+                steps,
+                True,
+            )
+        elif 2 < scale < 4:
+            lowres = latent_upscaler(
+                lowres,
+                prompt,
+                neg_prompt,
+                0,
+                steps,
+                False,
+            )
+            lowres = latent_upscaler(
+                lowres,
+                prompt,
+                neg_prompt,
+                0,
+                steps,
+                True,
+            )
+        elif scale >= 4:
+            lowres = latent_upscaler(
+                lowres,
+                prompt,
+                neg_prompt,
+                0,
+                steps,
+                False,
+            )
+            lowres = latent_upscaler(
+                lowres,
+                prompt,
+                neg_prompt,
+                0,
+                steps,
+                False,
+            )
+            lowres = latent_upscaler(
+                lowres,
+                prompt,
+                neg_prompt,
+                0,
+                steps,
+                True,
+            )
 
     print()
     print(f"running hiresfix at {scale}x [{denoise_strength} denoise]")
