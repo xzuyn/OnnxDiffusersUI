@@ -191,7 +191,7 @@ def run_diffusers(
                         neg_prompt,
                         height,
                         width,
-                        batch_images[0],
+                        batch_images,
                         steps,
                         guidance_scale,
                         eta,
@@ -199,6 +199,8 @@ def run_diffusers(
                         batch_size,
                         rng,
                         hiresvalue,
+                        False,
+                        True,
                     )
                 finish = time.time()
             elif current_pipe == "img2img":
@@ -1025,73 +1027,129 @@ def hires_fix(
         batch_size,
         rng,
         scale,
+        uselatentscaler,
+        deallocate,
 ):
-    global pipe
     global textenc_on_cpu
     global vae_on_cpu
+    global img2img
 
+    if uselatentscaler is True and scale <= 2:
+        lowres = latent_upscaler(
+            lowres,
+            prompt,
+            neg_prompt,
+            0,
+            steps,
+            True,
+        )
+    elif uselatentscaler is True and (2 < scale < 4):
+        lowres = latent_upscaler(
+            lowres,
+            prompt,
+            neg_prompt,
+            0,
+            steps,
+            False,
+        )
+        lowres = latent_upscaler(
+            lowres,
+            prompt,
+            neg_prompt,
+            0,
+            steps,
+            True,
+        )
+    elif uselatentscaler is True and scale >= 4:
+        lowres = latent_upscaler(
+            lowres,
+            prompt,
+            neg_prompt,
+            0,
+            steps,
+            False,
+        )
+        lowres = latent_upscaler(
+            lowres,
+            prompt,
+            neg_prompt,
+            0,
+            steps,
+            False,
+        )
+        lowres = latent_upscaler(
+            lowres,
+            prompt,
+            neg_prompt,
+            0,
+            steps,
+            True,
+        )
+
+    print()
     print(f"running hiresfix at {scale}x [{denoise_strength} denoise]")
 
-    if textenc_on_cpu and vae_on_cpu:
-        print("Using CPU Text Encoder")
-        print("Using CPU VAE")
-        cputextenc = OnnxRuntimeModel.from_pretrained(
-            model_path + "/text_encoder"
-        )
-        cpuvaedec = OnnxRuntimeModel.from_pretrained(
-            model_path + "/vae_decoder"
-        )
-        cpuvaeenc = OnnxRuntimeModel.from_pretrained(
-            model_path + "/vae_encoder"
-        )
-        pipe = OnnxStableDiffusionImg2ImgPipeline.from_pretrained(
-            model_path,
-            provider=provider,
-            scheduler=scheduler,
-            text_encoder=cputextenc,
-            vae_decoder=cpuvaedec,
-            vae_encoder=cpuvaeenc,
-        )
-    elif textenc_on_cpu:
-        print("Using CPU Text Encoder")
-        cputextenc = OnnxRuntimeModel.from_pretrained(
-            model_path + "/text_encoder"
-        )
-        pipe = OnnxStableDiffusionImg2ImgPipeline.from_pretrained(
-            model_path,
-            provider=provider,
-            scheduler=scheduler,
-            text_encoder=cputextenc,
-        )
-    elif vae_on_cpu:
-        print("Using CPU VAE")
-        cpuvaedec = OnnxRuntimeModel.from_pretrained(
-            model_path + "/vae_decoder"
-        )
-        cpuvaeenc = OnnxRuntimeModel.from_pretrained(
-            model_path + "/vae_encoder"
-        )
-        pipe = OnnxStableDiffusionImg2ImgPipeline.from_pretrained(
-            model_path,
-            provider=provider,
-            scheduler=scheduler,
-            vae_decoder=cpuvaedec,
-            vae_encoder=cpuvaeenc,
-        )
-    else:
-        pipe = OnnxStableDiffusionImg2ImgPipeline.from_pretrained(
-            model_path, provider=provider, scheduler=scheduler
-        )
+    if img2img is None:
+        if textenc_on_cpu and vae_on_cpu:
+            print("Using CPU Text Encoder")
+            print("Using CPU VAE")
+            cputextenc = OnnxRuntimeModel.from_pretrained(
+                model_path + "/text_encoder"
+            )
+            cpuvaedec = OnnxRuntimeModel.from_pretrained(
+                model_path + "/vae_decoder"
+            )
+            cpuvaeenc = OnnxRuntimeModel.from_pretrained(
+                model_path + "/vae_encoder"
+            )
+            img2img = OnnxStableDiffusionImg2ImgPipeline.from_pretrained(
+                model_path,
+                provider=provider,
+                scheduler=scheduler,
+                text_encoder=cputextenc,
+                vae_decoder=cpuvaedec,
+                vae_encoder=cpuvaeenc,
+            )
+        elif textenc_on_cpu:
+            print("Using CPU Text Encoder")
+            cputextenc = OnnxRuntimeModel.from_pretrained(
+                model_path + "/text_encoder"
+            )
+            img2img = OnnxStableDiffusionImg2ImgPipeline.from_pretrained(
+                model_path,
+                provider=provider,
+                scheduler=scheduler,
+                text_encoder=cputextenc,
+            )
+        elif vae_on_cpu:
+            print("Using CPU VAE")
+            cpuvaedec = OnnxRuntimeModel.from_pretrained(
+                model_path + "/vae_decoder"
+            )
+            cpuvaeenc = OnnxRuntimeModel.from_pretrained(
+                model_path + "/vae_encoder"
+            )
+            img2img = OnnxStableDiffusionImg2ImgPipeline.from_pretrained(
+                model_path,
+                provider=provider,
+                scheduler=scheduler,
+                vae_decoder=cpuvaedec,
+                vae_encoder=cpuvaeenc,
+            )
+        else:
+            img2img = OnnxStableDiffusionImg2ImgPipeline.from_pretrained(
+                model_path, provider=provider, scheduler=scheduler
+            )
 
     lowres_scaled = resize_and_crop(
-        lowres,
+        lowres[0],
         int(height * scale),
         int(width * scale),
     )
 
     steps = step_adjustment(steps, denoise_strength, "img2img")
 
-    hires_image = pipe(
+    hires_image = img2img(
         prompt,
         negative_prompt=neg_prompt,
         image=lowres_scaled,
@@ -1103,25 +1161,34 @@ def hires_fix(
         generator=rng,
     ).images
 
-    pipe = None
-    gc.collect()
+    if deallocate is True:
+        img2img = None
+        gc.collect()
 
     return hires_image
 
 
-def latent_upscaler(image, prompt, negprompt, guid, steps):
+def latent_upscaler(image, prompt, negprompt, guid, steps, deallocate):
     from diffusers import (
         StableDiffusionLatentUpscalePipeline,
     )
     import torch
-    import random
+    # import random
 
-    generator = torch.manual_seed(random.randint(1, 99999))
+    global upscaler
+    global generator
 
-    upscaler = StableDiffusionLatentUpscalePipeline.from_pretrained(
-        "stabilityai/sd-x2-latent-upscaler")
-    upscaler.to("cpu")
-    upscaler.enable_attention_slicing("max")
+    print()
+    print("running latent upscaler")
+
+    if generator is None:
+        # generator = torch.manual_seed(random.randint(1, 99999))
+        generator = torch.manual_seed(33)
+    if upscaler is None:
+        upscaler = StableDiffusionLatentUpscalePipeline.from_pretrained(
+            "stabilityai/sd-x2-latent-upscaler")
+        upscaler.to("cpu")
+        upscaler.enable_attention_slicing("max")
     upscaled_image = upscaler(
         prompt=prompt,
         negative_prompt=negprompt,
@@ -1130,14 +1197,14 @@ def latent_upscaler(image, prompt, negprompt, guid, steps):
         guidance_scale=guid,
         generator=generator,
     ).images
-    batch_images = upscaled_image
 
-    generator = None
-    upscaler = None
-    del torch
-    gc.collect()
+    if deallocate is True:
+        generator = None
+        upscaler = None
+        del torch
+        gc.collect()
 
-    return batch_images
+    return upscaled_image
 
 
 # TODO: add stable diffusion x4 upscaling
@@ -1941,6 +2008,9 @@ if __name__ == "__main__":
     current_tab = 0
     current_pipe = "txt2img"
     current_legacy = False
+    img2img = None
+    generator = None
+    upscaler = None
     release_memory_after_generation = args.release_memory_after_generation
     release_memory_on_change = args.release_memory_on_change
     textenc_on_cpu = args.cpu_textenc
@@ -2092,7 +2162,7 @@ if __name__ == "__main__":
                         )
                         hiresvalue_t0 = gr.Slider(
                             1.125,
-                            4,
+                            8,
                             value=1.75,
                             step=0.125,
                             label="hires value",
