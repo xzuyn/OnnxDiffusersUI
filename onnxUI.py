@@ -1109,14 +1109,68 @@ def hires_fix(
     return hires_image
 
 
-# TODO: add latent upscaling
-def latent_upscaling(image):
-    print("placeholder")
+def latent_upscaler(image, prompt, negprompt, guid, steps):
+    from diffusers import (
+        StableDiffusionLatentUpscalePipeline,
+    )
+    import torch
+    import random
+
+    generator = torch.manual_seed(random.randint(1, 99999))
+
+    upscaler = StableDiffusionLatentUpscalePipeline.from_pretrained(
+        "stabilityai/sd-x2-latent-upscaler")
+    upscaler.to("cpu")
+    upscaler.enable_attention_slicing("max")
+    upscaled_image = upscaler(
+        prompt=prompt,
+        negative_prompt=negprompt,
+        image=image,
+        num_inference_steps=steps,
+        guidance_scale=guid,
+        generator=generator,
+    ).images
+    batch_images = upscaled_image
+
+    generator = None
+    upscaler = None
+    del torch
+    gc.collect()
+
+    return batch_images
 
 
 # TODO: add stable diffusion x4 upscaling
-def stablediffusion_upscaling(image):
-    print("placeholder")
+# unviable. needs 256gb of ram for cpu.
+def stablediffusion_upscaling(image, prompt, negprompt, guid, steps):
+    from diffusers import (
+        StableDiffusionUpscalePipeline,
+    )
+    import torch
+    import random
+
+    generator = torch.manual_seed(random.randint(1, 99999))
+
+    upscaler = StableDiffusionUpscalePipeline.from_pretrained(
+        "stabilityai/stable-diffusion-x4-upscaler")
+    upscaler.to("cpu")
+    upscaler.enable_attention_slicing("max")
+    upscaled_image = upscaler(
+        prompt=prompt,
+        negative_prompt=negprompt,
+        image=image,
+        num_inference_steps=steps,
+        guidance_scale=guid,
+        generator=generator,
+    ).images
+    batch_images = upscaled_image
+
+    generator = None
+    upscaler = None
+    del torch
+    gc.collect()
+
+    return batch_images
 
 
 def clear_click():
