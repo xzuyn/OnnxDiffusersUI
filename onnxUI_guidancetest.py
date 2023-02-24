@@ -64,6 +64,7 @@ def run_diffusers(
         transfer_methods: str,
         transfer_amounts: str,
         hiresfix: bool,
+        hireslatent: bool,
         hiresvalue: float,
         hiresdenoise: float,
 ) -> Tuple[list, str]:
@@ -1262,6 +1263,7 @@ def clear_click():
             firstguid_t0: 1.01,
             lastguid_t0: 7.5,
             hiresfix_t0: False,
+            hireslatent_t0: False,
             hiresvalue_t0: 1.75,
             hiresdenoise_t0: 0.75,
         }
@@ -1338,6 +1340,7 @@ def generate_click(
         firstguid_t0,
         lastguid_t0,
         hiresfix_t0,
+        hireslatent_t0,
         hiresvalue_t0,
         hiresdenoise_t0,
         prompt_t1,
@@ -1819,6 +1822,7 @@ def generate_click(
             transfer_methods_t1,
             transfer_amounts_t1,
             hiresfix_t0,
+            hireslatent_t0,
             hiresvalue_t0,
             hiresdenoise_t0,
         )
@@ -1855,6 +1859,7 @@ def generate_click(
             colortransfer_t1,
             transfer_methods_t1,
             transfer_amounts_t1,
+            False,
             False,
             0,
             0,
@@ -1902,6 +1907,7 @@ def generate_click(
             colortransfer_t2,
             transfer_methods_t2,
             transfer_amounts_t2,
+            False,
             False,
             0,
             0,
@@ -2161,6 +2167,11 @@ if __name__ == "__main__":
                             value=False, label="hiresfix (iterations "
                                                "unavailable currently)"
                         )
+                        hireslatent_t0 = gr.Checkbox(
+                            value=False, label="use latent upscaling before "
+                                               "hiresfix"
+                        )
+                    with gr.Row():
                         hiresvalue_t0 = gr.Slider(
                             1.125,
                             8,
@@ -2467,6 +2478,7 @@ if __name__ == "__main__":
             firstguid_t0,
             lastguid_t0,
             hiresfix_t0,
+            hireslatent_t0,
             hiresvalue_t0,
             hiresdenoise_t0,
         ]
