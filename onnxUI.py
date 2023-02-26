@@ -182,9 +182,9 @@ def run_diffusers(
                     num_images_per_prompt=batch_size,
                     generator=rng,
                 ).images
+                # TODO: add option to not deallocate pipe
+                # TODO: fix iterations
                 if hiresfix is True:
-                    # TODO: add option to not deallocate pipe
-                    # TODO: fix iterations
                     pipe = None
                     gc.collect()
                     batch_images = hires_fix(
@@ -201,6 +201,16 @@ def run_diffusers(
                         rng,
                         hiresvalue,
                         hireslatent,
+                        True,
+                    )
+                # TODO: add separate button for this
+                elif hiresfix is False and hireslatent is True:
+                    batch_images = latent_upscaler(
+                        batch_images,
+                        prompt,
+                        neg_prompt,
+                        0,
+                        steps,
                         True,
                     )
                 finish = time.time()
@@ -745,17 +755,25 @@ def run_diffusers(
 
 def resize_and_crop(input_image: PIL.Image.Image, height: int, width: int):
     input_width, input_height = input_image.size
+
+    # nearest neighbor for upscaling
+    if (input_width * input_height) < (width * height):
+        resample_type = Image.NEAREST
+    # lanczos for downscaling
+    else:
+        resample_type = Image.LANCZOS
+
     if height / width > input_height / input_width:
         adjust_width = int(input_width * height / input_height)
         input_image = input_image.resize((adjust_width, height),
-                                         resample=Image.NEAREST)
+                                         resample=resample_type)
         left = (adjust_width - width) // 2
         right = left + width
         input_image = input_image.crop((left, 0, right, height))
     else:
         adjust_height = int(input_height * width / input_width)
         input_image = input_image.resize((width, adjust_height),
-                                         resample=Image.NEAREST)
+                                         resample=resample_type)
         top = (adjust_height - height) // 2
         bottom = top + height
         input_image = input_image.crop((0, top, width, bottom))
@@ -1035,58 +1053,69 @@ def hires_fix(
     global vae_on_cpu
     global img2img
 
+    # if uselatentscaler is True:
+    #     if scale <= 2:
+    #         lowres = latent_upscaler(
+    #             lowres,
+    #             prompt,
+    #             neg_prompt,
+    #             0,
+    #             steps,
+    #             True,
+    #         )
+    #     elif 2 < scale < 4:
+    #         lowres = latent_upscaler(
+    #             lowres,
+    #             prompt,
+    #             neg_prompt,
+    #             0,
+    #             steps,
+    #             False,
+    #         )
+    #         lowres = latent_upscaler(
+    #             lowres,
+    #             prompt,
+    #             neg_prompt,
+    #             0,
+    #             steps,
+    #             True,
+    #         )
+    #     elif scale >= 4:
+    #         lowres = latent_upscaler(
+    #             lowres,
+    #             prompt,
+    #             neg_prompt,
+    #             0,
+    #             steps,
+    #             False,
+    #         )
+    #         lowres = latent_upscaler(
+    #             lowres,
+    #             prompt,
+    #             neg_prompt,
+    #             0,
+    #             steps,
+    #             False,
+    #         )
+    #         lowres = latent_upscaler(
+    #             lowres,
+    #             prompt,
+    #             neg_prompt,
+    #             0,
+    #             steps,
+    #             True,
+    #         )
+
+    # just do one latent upscaling for now.
     if uselatentscaler is True:
-        if scale <= 2:
-            lowres = latent_upscaler(
-                lowres,
-                prompt,
-                neg_prompt,
-                0,
-                steps,
-                True,
-            )
-        elif 2 < scale < 4:
-            lowres = latent_upscaler(
-                lowres,
-                prompt,
-                neg_prompt,
-                0,
-                steps,
-                False,
-            )
-            lowres = latent_upscaler(
-                lowres,
-                prompt,
-                neg_prompt,
-                0,
-                steps,
-                True,
-            )
-        elif scale >= 4:
-            lowres = latent_upscaler(
-                lowres,
-                prompt,
-                neg_prompt,
-                0,
-                steps,
-                False,
-            )
-            lowres = latent_upscaler(
-                lowres,
-                prompt,
-                neg_prompt,
-                0,
-                steps,
-                False,
-            )
-            lowres = latent_upscaler(
-                lowres,
-                prompt,
-                neg_prompt,
-                0,
-                steps,
-                True,
-            )
+        lowres = latent_upscaler(
+            lowres,
+            prompt,
+            neg_prompt,
+            0,
+            steps,
+            True,
+        )
 
     print()
     print(f"running hiresfix at {scale}x [{denoise_strength} denoise]")
@@ -1211,35 +1240,35 @@ def latent_upscaler(image, prompt, negprompt, guid, steps, deallocate):
 
 # TODO: add stable diffusion x4 upscaling
 # unviable. needs 256gb of ram for cpu.
-def stablediffusion_upscaling(image, prompt, negprompt, guid, steps):
-    from diffusers import (
-        StableDiffusionUpscalePipeline,
-    )
-    import torch
-    import random
-
-    generator = torch.manual_seed(random.randint(1, 99999))
-
-    upscaler = StableDiffusionUpscalePipeline.from_pretrained(
-        "stabilityai/stable-diffusion-x4-upscaler")
-    upscaler.to("cpu")
-    upscaler.enable_attention_slicing("max")
-    upscaled_image = upscaler(
-        prompt=prompt,
-        negative_prompt=negprompt,
-        image=image,
-        num_inference_steps=steps,
-        guidance_scale=guid,
-        generator=generator,
-    ).images
-    batch_images = upscaled_image
-
-    generator = None
-    upscaler = None
-    del torch
-    gc.collect()
-
-    return batch_images
+# def stablediffusion_upscaling(image, prompt, negprompt, guid, steps):
+#     from diffusers import (
+#         StableDiffusionUpscalePipeline,
+#     )
+#     import torch
+#     import random
+#
+#     generator = torch.manual_seed(random.randint(1, 99999))
+#
+#     upscaler = StableDiffusionUpscalePipeline.from_pretrained(
+#         "stabilityai/stable-diffusion-x4-upscaler")
+#     upscaler.to("cpu")
+#     upscaler.enable_attention_slicing("max")
+#     upscaled_image = upscaler(
+#         prompt=prompt,
+#         negative_prompt=negprompt,
+#         image=image,
+#         num_inference_steps=steps,
+#         guidance_scale=guid,
+#         generator=generator,
+#     ).images
+#     batch_images = upscaled_image
+#
+#     generator = None
+#     upscaler = None
+#     del torch
+#     gc.collect()
+#
+#     return batch_images
 
 
 def clear_click():
@@ -2169,7 +2198,9 @@ if __name__ == "__main__":
                         )
                         hireslatent_t0 = gr.Checkbox(
                             value=False, label="use latent upscaling before "
-                                               "hiresfix"
+                                               "hiresfix (or after regular "
+                                               "generation if hiresfix is "
+                                               "disabled)"
                         )
                     with gr.Row():
                         hiresvalue_t0 = gr.Slider(
