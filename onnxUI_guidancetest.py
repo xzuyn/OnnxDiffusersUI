@@ -1307,59 +1307,6 @@ def hires_fix(
     global img2img
     global original_steps
 
-    # if uselatentscaler is True:
-    #     if scale <= 2:
-    #         lowres = latent_upscaler(
-    #             lowres,
-    #             prompt,
-    #             neg_prompt,
-    #             0,
-    #             steps,
-    #             True,
-    #         )
-    #     elif 2 < scale < 4:
-    #         lowres = latent_upscaler(
-    #             lowres,
-    #             prompt,
-    #             neg_prompt,
-    #             0,
-    #             steps,
-    #             False,
-    #         )
-    #         lowres = latent_upscaler(
-    #             lowres,
-    #             prompt,
-    #             neg_prompt,
-    #             0,
-    #             steps,
-    #             True,
-    #         )
-    #     elif scale >= 4:
-    #         lowres = latent_upscaler(
-    #             lowres,
-    #             prompt,
-    #             neg_prompt,
-    #             0,
-    #             steps,
-    #             False,
-    #         )
-    #         lowres = latent_upscaler(
-    #             lowres,
-    #             prompt,
-    #             neg_prompt,
-    #             0,
-    #             steps,
-    #             False,
-    #         )
-    #         lowres = latent_upscaler(
-    #             lowres,
-    #             prompt,
-    #             neg_prompt,
-    #             0,
-    #             steps,
-    #             True,
-    #         )
-
     # just do one latent upscaling for now.
     if uselatentscaler is True:
         lowres = latent_upscaler(
