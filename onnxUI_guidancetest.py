@@ -71,6 +71,7 @@ def run_diffusers(
     global model_name
     global current_pipe
     global pipe
+    global original_steps
 
     prompt.strip("\n")
     neg_prompt.strip("\n")
@@ -144,27 +145,6 @@ def run_diffusers(
     if video is False:
         for i in range(iteration_count):
             print(f"iteration {i + 1}/{iteration_count}")
-
-            # TODO: set steps to unadjusted step value for history and metadata
-            info = (
-                f"{next_index + i:06} | "
-                f"prompt: {prompt} "
-                f"negative prompt: {neg_prompt} | "
-                f"scheduler: {sched_name} "
-                f"model: {model_name} "
-                f"iteration size: {iteration_count} "
-                f"batch size: {batch_size} "
-                f"steps: {steps} "
-                f"scale: {guidance_scale} "
-                f"width: {width} "
-                f"height: {height} "
-                f"eta: {eta} "
-                f"seed: {seeds[i]}"
-            )
-            if current_pipe == "img2img":
-                info = info + f" denoise: {denoise_strength}"
-            with open(os.path.join(output_path, "history.txt"), "a") as log:
-                log.write(info + "\n")
 
             # create generator object from seed
             rng = np.random.RandomState(seeds[i])
@@ -308,6 +288,35 @@ def run_diffusers(
                     ).images
                 finish = time.time()
 
+            # now that the image has been generated, add info to history.txt
+            # and metadata to be saved into png
+
+            if current_pipe == "img2img" or "inpaint":
+                steps = original_steps
+
+            info = (
+                f"{next_index + i:06} | "
+                f"prompt: {prompt} "
+                f"negative prompt: {neg_prompt} | "
+                f"scheduler: {sched_name} "
+                f"model: {model_name} "
+                f"iteration size: {iteration_count} "
+                f"batch size: {batch_size} "
+                f"steps: {steps} "
+                f"scale: {guidance_scale} "
+                f"width: {width} "
+                f"height: {height} "
+                f"eta: {eta} "
+                f"seed: {seeds[i]}"
+            )
+            if current_pipe == "img2img":
+                info = info + f" denoise: {denoise_strength}"
+            if hiresfix is True and current_pipe == "txt2img":
+                info = info + f" [hiresfix: {hiresvalue}x,"
+                info = info + f" hires denoise: {hiresdenoise}]"
+            with open(os.path.join(output_path, "history.txt"), "a") as log:
+                log.write(info + "\n")
+
             short_prompt = prompt.strip('<>:"/\\|?*\n\t')
             short_prompt = re.sub(r'[\\/*?:"<>|\n\t]', "", short_prompt)
             short_prompt = (
@@ -329,6 +338,9 @@ def run_diffusers(
             metadata.add_text("Eta: ", str(eta))
             if current_pipe == "img2img":
                 metadata.add_text("Denoise: ", str(denoise_strength))
+            if hiresfix is True and current_pipe == "txt2img":
+                metadata.add_text("hiresfix: ", str(f"{hiresvalue}x"))
+                metadata.add_text("hires denoise: ", str(f"{hiresdenoise}"))
 
             # img2img color transfer
             if (
@@ -469,6 +481,10 @@ def run_diffusers(
                             optimize=True,
                             progressive=True,
                         )
+            # pipe was deallocated with hires fix, this reallocates it
+            # after the image has been saved
+            if hiresfix is True:
+                pipe = txt2img_cpu()
             images.extend(batch_images)
             time_taken = time_taken + (finish - start)
 
@@ -521,27 +537,6 @@ def run_diffusers(
             if image_number is None:
                 image_number = 1
 
-            # TODO: set steps to unadjusted step value for history and metadata
-            info = (
-                f"{next_index + image_number:06} | "
-                f"prompt: {prompt} "
-                f"negative prompt: {neg_prompt} | "
-                f"scheduler: {sched_name} "
-                f"model: {model_name} "
-                f"iteration size: {iteration_count} "
-                f"batch size: {batch_size} "
-                f"steps: {steps} "
-                f"scale: {round(guid, 3)} "
-                f"width: {width} "
-                f"height: {height} "
-                f"eta: {eta} "
-                f"seed: {seed}"
-            )
-            if current_pipe == "img2img":
-                info = info + f" denoise: {denoise_strength}"
-            with open(os.path.join(frames_path, "history.txt"), "a") as log:
-                log.write(info + "\n")
-
             # create generator object from seed
             rng = np.random.RandomState(seed)
 
@@ -590,6 +585,32 @@ def run_diffusers(
                 ).images
                 finish = time.time()
 
+            # now that the image has been generated, add info to history.txt
+            # and metadata to be saved into png
+
+            info = (
+                f"{next_index + image_number:06} | "
+                f"prompt: {prompt} "
+                f"negative prompt: {neg_prompt} | "
+                f"scheduler: {sched_name} "
+                f"model: {model_name} "
+                f"iteration size: {iteration_count} "
+                f"batch size: {batch_size} "
+                f"steps: {steps} "
+                f"scale: {round(guid, 3)} "
+                f"width: {width} "
+                f"height: {height} "
+                f"eta: {eta} "
+                f"seed: {seed}"
+            )
+            if current_pipe == "img2img":
+                info = info + f" denoise: {denoise_strength}"
+            if hiresfix is True and current_pipe == "txt2img":
+                info = info + f" [hiresfix: {hiresvalue}x,"
+                info = info + f" hires denoise: {hiresdenoise}]"
+            with open(os.path.join(frames_path, "history.txt"), "a") as log:
+                log.write(info + "\n")
+
             short_prompt = prompt.strip('<>:"/\\|?*\n\t')
             short_prompt = re.sub(r'[\\/*?:"<>|\n\t]', "", short_prompt)
             short_prompt = (
@@ -611,6 +632,9 @@ def run_diffusers(
             metadata.add_text("Eta: ", str(eta))
             if current_pipe == "img2img":
                 metadata.add_text("Denoise: ", str(denoise_strength))
+            if hiresfix is True and current_pipe == "txt2img":
+                metadata.add_text("hiresfix: ", str(f"{hiresvalue}x"))
+                metadata.add_text("hires denoise: ", str(f"{hiresdenoise}"))
 
             # png output
             if image_format == "png":
@@ -1281,6 +1305,7 @@ def hires_fix(
         deallocate,
 ):
     global img2img
+    global original_steps
 
     # if uselatentscaler is True:
     #     if scale <= 2:
@@ -1347,7 +1372,7 @@ def hires_fix(
         )
 
     print()
-    print(f"running hiresfix at {scale}x [{denoise_strength} denoise]")
+    print(f"[hiresfix {scale}x, {denoise_strength} denoise]")
 
     if img2img is None:
         img2img = img2img_cpu()
@@ -1358,6 +1383,7 @@ def hires_fix(
         int(width * scale),
     )
 
+    original_steps = steps
     steps = step_adjustment(steps, denoise_strength, "img2img")
 
     hires_image = img2img(
@@ -1397,7 +1423,8 @@ def latent_upscaler(image, prompt, negprompt, guid, steps, deallocate):
         generator = torch.manual_seed(33)
     if upscaler is None:
         upscaler = StableDiffusionLatentUpscalePipeline.from_pretrained(
-            "stabilityai/sd-x2-latent-upscaler")
+            "stabilityai/sd-x2-latent-upscaler",
+        )
         upscaler.to("cpu")
         upscaler.enable_attention_slicing("max")
     upscaled_image = upscaler(
@@ -1611,6 +1638,7 @@ def generate_click(
     global loaded_width
     global loaded_height
     global model_path
+    global original_steps
 
     # reset scheduler and pipeline if model is different
     if model_name != model_drop:
@@ -1826,6 +1854,7 @@ def generate_click(
         input_image = image_t1.convert("RGB")
         input_image = resize_and_crop(input_image, height_t1, width_t1)
 
+        original_steps = steps_t1
         steps_t1 = step_adjustment(steps_t1, denoise_t1, "img2img")
 
         images, status = run_diffusers(
@@ -1874,6 +1903,7 @@ def generate_click(
 
         # adjust steps to account for legacy inpaint only using ~80% of set steps
         if legacy_t2 is True:
+            original_steps = steps_t2
             steps_t2 = step_adjustment(steps_t2, 0, "inpaint")
 
         images, status = run_diffusers(
