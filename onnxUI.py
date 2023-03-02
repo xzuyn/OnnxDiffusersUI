@@ -71,6 +71,7 @@ def run_diffusers(
     global model_name
     global current_pipe
     global pipe
+    global hires_pipe
     global original_steps
 
     prompt.strip("\n")
@@ -97,7 +98,9 @@ def run_diffusers(
 
     # create and parse output directory
     output_path = "output"
+    hiresfix_path = "output/hiresfix"
     os.makedirs(output_path, exist_ok=True)
+    os.makedirs(hiresfix_path, exist_ok=True)
     dir_list = os.listdir(output_path)
     if video is False:
         if len(dir_list) and video is False:
@@ -143,6 +146,7 @@ def run_diffusers(
 
     # image
     if video is False:
+        images_for_hires = []
         for i in range(iteration_count):
             print(f"iteration {i + 1}/{iteration_count}")
 
@@ -162,28 +166,8 @@ def run_diffusers(
                     num_images_per_prompt=batch_size,
                     generator=rng,
                 ).images
-                # TODO: add option to not deallocate pipe
-                # TODO: fix iterations
                 if hiresfix is True:
-                    pipe = None
-                    gc.collect()
-                    batch_images = hires_fix(
-                        prompt,
-                        neg_prompt,
-                        height,
-                        width,
-                        batch_images,
-                        steps,
-                        guidance_scale,
-                        eta,
-                        hiresdenoise,
-                        batch_size,
-                        rng,
-                        hiresvalue,
-                        hireslatent,
-                        True,
-                    )
-                # TODO: add separate button for this
+                    images_for_hires.append(batch_images[0])
                 elif hiresfix is False and hireslatent is True:
                     batch_images = latent_upscaler(
                         batch_images,
@@ -193,6 +177,7 @@ def run_diffusers(
                         steps,
                         True,
                     )
+                    images_for_hires.append(batch_images[0])
                 finish = time.time()
             elif current_pipe == "img2img":
                 start = time.time()
@@ -311,9 +296,6 @@ def run_diffusers(
             )
             if current_pipe == "img2img":
                 info = info + f" denoise: {denoise_strength}"
-            if hiresfix is True and current_pipe == "txt2img":
-                info = info + f" [hiresfix: {hiresvalue}x,"
-                info = info + f" hires denoise: {hiresdenoise}]"
             with open(os.path.join(output_path, "history.txt"), "a") as log:
                 log.write(info + "\n")
 
@@ -338,9 +320,6 @@ def run_diffusers(
             metadata.add_text("Eta: ", str(eta))
             if current_pipe == "img2img":
                 metadata.add_text("Denoise: ", str(denoise_strength))
-            if hiresfix is True and current_pipe == "txt2img":
-                metadata.add_text("hiresfix: ", str(f"{hiresvalue}x"))
-                metadata.add_text("hires denoise: ", str(f"{hiresdenoise}"))
 
             # img2img color transfer
             if (
@@ -481,12 +460,114 @@ def run_diffusers(
                             optimize=True,
                             progressive=True,
                         )
-            # pipe was deallocated with hires fix, this reallocates it
-            # after the image has been saved
-            if hiresfix is True:
-                pipe = txt2img_cpu()
-            images.extend(batch_images)
+            if hiresfix is False:
+                images.extend(batch_images)
             time_taken = time_taken + (finish - start)
+
+        # TODO: do all this inside hires_fix function
+        if hiresfix is True:
+            pipe = None
+            gc.collect()
+            if hires_pipe is None:
+                hires_pipe = img2img_cpu()
+
+            for i in range(iteration_count):
+                print(f"hires iteration {i + 1}/{iteration_count}")
+
+                # create generator object from seed
+                rng = np.random.RandomState(seeds[i])
+
+                hires_images = hires_fix(
+                    prompt,
+                    neg_prompt,
+                    height,
+                    width,
+                    images_for_hires[i],
+                    steps,
+                    guidance_scale,
+                    eta,
+                    hiresdenoise,
+                    batch_size,
+                    rng,
+                    hiresvalue,
+                    hireslatent,
+                    False,
+                )
+
+                short_prompt = prompt.strip('<>:"/\\|?*\n\t')
+                short_prompt = re.sub(r'[\\/*?:"<>|\n\t]', "", short_prompt)
+                short_prompt = (
+                    short_prompt[:50] if len(short_prompt) > 64 else short_prompt
+                )
+
+                metadata = PngImagePlugin.PngInfo()
+
+                metadata.add_text("Prompt: ", str(prompt))
+                metadata.add_text("Negative prompt: ", str(neg_prompt))
+                metadata.add_text("Steps: ", str(steps))
+                metadata.add_text("Sampler: ", str(sched_name))
+                metadata.add_text("CFG scale: ", str(guidance_scale))
+                metadata.add_text("Seed: ", str(seeds[i]))
+                metadata.add_text("Size: ", str(f"{width}x{height}"))
+                metadata.add_text("Model: ", str(model_name))
+                metadata.add_text("Iteration size: ", str(iteration_count))
+                metadata.add_text("Batch Size: ", str(batch_size))
+                metadata.add_text("Eta: ", str(eta))
+                if current_pipe == "img2img":
+                    metadata.add_text("Denoise: ", str(denoise_strength))
+                if hiresfix is True and current_pipe == "txt2img":
+                    metadata.add_text("hiresfix: ", str(f"{hiresvalue}x"))
+                    metadata.add_text("hires denoise: ", str(f"{hiresdenoise}"))
+
+                # png output
+                if image_format == "png":
+                    for j in range(batch_size):
+                        hires_images[j].save(
+                            os.path.join(
+                                hiresfix_path,
+                                f"{next_index + i:06}-"
+                                f"{j:02}."
+                                f"{short_prompt}_"
+                                f"{seeds[i]}_"
+                                f"{guidance_scale}g_"
+                                f"{width}x"
+                                f"{height}_"
+                                f"{steps}s_"
+                                f"{sched_short_name}."
+                                f"{image_format}",
+                            ),
+                            optimize=True,
+                            pnginfo=metadata,
+                        )
+                # jpg output
+                elif image_format == "jpg":
+                    for j in range(batch_size):
+                        hires_images[j].save(
+                            os.path.join(
+                                hiresfix_path,
+                                f"{next_index + i:06}-"
+                                f"{j:02}."
+                                f"{short_prompt}_"
+                                f"{seeds[i]}_"
+                                f"{guidance_scale}g_"
+                                f"{width}x"
+                                f"{height}_"
+                                f"{steps}s_"
+                                f"{sched_short_name}."
+                                f"{image_format}",
+                            ),
+                            quality=95,
+                            subsampling=0,
+                            optimize=True,
+                            progressive=True,
+                        )
+                images.extend(hires_images)
+
+            # deallocate hires_pipe and reallocate txt2img pipe
+            if hiresfix is True:
+                hires_pipe = None
+                gc.collect()
+                # pipe = txt2img_cpu()
 
     # video
     # TODO: move to video_parameter_select function
@@ -1304,7 +1385,7 @@ def hires_fix(
         uselatentscaler,
         deallocate,
 ):
-    global img2img
+    global hires_pipe
     global original_steps
 
     # just do one latent upscaling for now.
@@ -1317,15 +1398,13 @@ def hires_fix(
             steps,
             True,
         )
+        lowres = lowres[0]
 
     print()
     print(f"[hiresfix {scale}x, {denoise_strength} denoise]")
 
-    if img2img is None:
-        img2img = img2img_cpu()
-
     lowres_scaled = resize_and_crop(
-        lowres[0],
+        lowres,
         int(height * scale),
         int(width * scale),
     )
@@ -1333,7 +1412,7 @@ def hires_fix(
     original_steps = steps
     steps = step_adjustment(steps, denoise_strength, "img2img")
 
-    hires_image = img2img(
+    hires_image = hires_pipe(
         prompt,
         negative_prompt=neg_prompt,
         image=lowres_scaled,
@@ -1346,7 +1425,7 @@ def hires_fix(
     ).images
 
     if deallocate is True:
-        img2img = None
+        hires_pipe = None
         gc.collect()
 
     return hires_image
@@ -1990,7 +2069,7 @@ if __name__ == "__main__":
     current_tab = 0
     current_pipe = "txt2img"
     current_legacy = False
-    img2img = None
+    hires_pipe = None
     generator = None
     upscaler = None
     release_memory_after_generation = args.release_memory_after_generation
