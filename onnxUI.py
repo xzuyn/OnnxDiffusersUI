@@ -477,6 +477,7 @@ def run_diffusers(
                 # create generator object from seed
                 rng = np.random.RandomState(seeds[i])
 
+                start = time.time()
                 hires_images = hires_fix(
                     prompt,
                     neg_prompt,
@@ -493,6 +494,7 @@ def run_diffusers(
                     hireslatent,
                     False,
                 )
+                finish = time.time()
 
                 short_prompt = prompt.strip('<>:"/\\|?*\n\t')
                 short_prompt = re.sub(r'[\\/*?:"<>|\n\t]', "", short_prompt)
@@ -562,6 +564,7 @@ def run_diffusers(
                             progressive=True,
                         )
                 images.extend(hires_images)
+                time_taken = time_taken + (finish - start)
 
             # deallocate hires_pipe and reallocate txt2img pipe
             if hiresfix is True:
