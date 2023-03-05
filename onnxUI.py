@@ -36,6 +36,7 @@ import lpw_pipe
 from PIL import Image, PngImagePlugin
 
 
+# TODO: clean this up by making newer parameters optional
 # gradio function
 def run_diffusers(
         prompt: str,
@@ -67,6 +68,7 @@ def run_diffusers(
         hireslatent: bool,
         hiresvalue: float,
         hiresdenoise: float,
+        hires_resample: Optional[str],
 ) -> Tuple[list, str]:
     global model_name
     global current_pipe
@@ -493,6 +495,7 @@ def run_diffusers(
                     hiresvalue,
                     hireslatent,
                     False,
+                    hires_resample,
                 )
                 finish = time.time()
 
@@ -862,15 +865,8 @@ def run_diffusers(
     return images, status
 
 
-def resize_and_crop(input_image: PIL.Image.Image, height: int, width: int):
+def resize_and_crop(input_image: PIL.Image.Image, height: int, width: int, resample_type):
     input_width, input_height = input_image.size
-
-    # nearest neighbor for upscaling
-    if (input_width * input_height) < (width * height):
-        resample_type = Image.NEAREST
-    # lanczos for downscaling
-    else:
-        resample_type = Image.LANCZOS
 
     if height / width > input_height / input_width:
         adjust_width = int(input_width * height / input_height)
@@ -1387,6 +1383,7 @@ def hires_fix(
         scale,
         uselatentscaler,
         deallocate,
+        hires_resample,
 ):
     global hires_pipe
     global original_steps
@@ -1406,10 +1403,26 @@ def hires_fix(
     print()
     print(f"[hiresfix {scale}x, {denoise_strength} denoise]")
 
+    if hires_resample == "nearest":
+        resample = Image.NEAREST
+    elif hires_resample == "bilinear":
+        resample = Image.BILINEAR
+    elif hires_resample == "lanczos":
+        resample = Image.LANCZOS
+    elif hires_resample == "bicubic":
+        resample = Image.BICUBIC
+    elif hires_resample == "hamming":
+        resample = Image.HAMMING
+    elif hires_resample == "box":
+        resample = Image.BOX
+    else:
+        resample = Image.NEAREST
+
     lowres_scaled = resize_and_crop(
         lowres,
         int(height * scale),
         int(width * scale),
+        resample,
     )
 
     original_steps = steps
@@ -1608,6 +1621,7 @@ def generate_click(
         hireslatent_t0,
         hiresvalue_t0,
         hiresdenoise_t0,
+        hires_resample_t0,
         prompt_t1,
         neg_prompt_t1,
         image_t1,
@@ -1631,6 +1645,7 @@ def generate_click(
         colortransfer_t1,
         transfer_methods_t1,
         transfer_amounts_t1,
+        resample_t1,
         prompt_t2,
         neg_prompt_t2,
         sch_t2,
@@ -1654,6 +1669,7 @@ def generate_click(
         colortransfer_t2,
         transfer_methods_t2,
         transfer_amounts_t2,
+        resample_t2,
 ):
     global model_name
     global provider
@@ -1879,11 +1895,31 @@ def generate_click(
             hireslatent_t0,
             hiresvalue_t0,
             hiresdenoise_t0,
+            hires_resample_t0,
         )
     elif current_tab == 1:
         # input image resizing
+        if resample_t1 == "nearest":
+            resample = Image.NEAREST
+        elif resample_t1 == "bilinear":
+            resample = Image.BILINEAR
+        elif resample_t1 == "lanczos":
+            resample = Image.LANCZOS
+        elif resample_t1 == "bicubic":
+            resample = Image.BICUBIC
+        elif resample_t1 == "hamming":
+            resample = Image.HAMMING
+        elif resample_t1 == "box":
+            resample = Image.BOX
+        else:
+            resample = Image.NEAREST
         input_image = image_t1.convert("RGB")
-        input_image = resize_and_crop(input_image, height_t1, width_t1)
+        input_image = resize_and_crop(
+            input_image,
+            height_t1,
+            width_t1,
+            resample,
+        )
 
         original_steps = steps_t1
         steps_t1 = step_adjustment(steps_t1, denoise_t1, "img2img")
@@ -1918,21 +1954,51 @@ def generate_click(
             False,
             0,
             0,
+            None,
         )
     elif current_tab == 2:
+        if resample_t2 == "nearest":
+            resample = Image.NEAREST
+        elif resample_t2 == "bilinear":
+            resample = Image.BILINEAR
+        elif resample_t2 == "lanczos":
+            resample = Image.LANCZOS
+        elif resample_t2 == "bicubic":
+            resample = Image.BICUBIC
+        elif resample_t2 == "hamming":
+            resample = Image.HAMMING
+        elif resample_t2 == "box":
+            resample = Image.BOX
+        else:
+            resample = Image.NEAREST
         input_image = image_t2["image"].convert("RGB")
-        input_image = resize_and_crop(input_image, height_t2, width_t2)
+        input_image = resize_and_crop(
+            input_image,
+            height_t2,
+            width_t2,
+            resample,
+        )
 
         original_steps = steps_t2
 
         if mask_t2 is not None:
             print("using uploaded mask")
             input_mask = mask_t2.convert("RGB")
-            input_mask = resize_and_crop(input_mask, height_t2, width_t2)
+            input_mask = resize_and_crop(
+                input_mask,
+                height_t2,
+                width_t2,
+                resample,
+            )
         else:
             print("using painted mask")
             input_mask = image_t2["mask"].convert("RGB")
-            input_mask = resize_and_crop(input_mask, height_t2, width_t2)
+            input_mask = resize_and_crop(
+                input_mask,
+                height_t2,
+                width_t2,
+                resample,
+            )
 
         # adjust steps to account for legacy inpaint only using ~80% of set steps
         if legacy_t2 is True:
@@ -1968,6 +2034,7 @@ def generate_click(
             False,
             0,
             0,
+            None,
         )
 
     gc.collect()
@@ -2156,6 +2223,8 @@ if __name__ == "__main__":
     transfer_methods_list = ["lhm", "reinhard", "pccm"]
     transfer_amounts_list = ["each", "final"]
 
+    resample_type_list = ["nearest", "bilinear", "lanczos", "bicubic", "hamming", "box"]
+
     # create gradio block
     title = "Stable Diffusion ONNX"
     with gr.Blocks(title=title, css=custom_css) as demo:
@@ -2187,6 +2256,10 @@ if __name__ == "__main__":
                     )
                     sch_t0 = gr.Radio(
                         sched_list, value="DEIS", label="scheduler"
+                    )
+                    hires_resample_t0 = gr.Radio(
+                        resample_type_list, value="nearest",
+                        label="resample method for rescaling"
                     )
                     with gr.Row():
                         iter_t0 = gr.Slider(
@@ -2282,6 +2355,10 @@ if __name__ == "__main__":
                     )
                     sch_t1 = gr.Radio(
                         sched_list, value="DEIS", label="scheduler"
+                    )
+                    resample_t1 = gr.Radio(
+                        resample_type_list, value="nearest",
+                        label="resample method for rescaling"
                     )
                     image_t1 = gr.Image(
                         label="input image", type="pil", elem_id="image_init"
@@ -2382,6 +2459,10 @@ if __name__ == "__main__":
                     )
                     sch_t2 = gr.Radio(
                         sched_list, value="DEIS", label="scheduler"
+                    )
+                    resample_t2 = gr.Radio(
+                        resample_type_list, value="nearest",
+                        label="resample method for rescaling"
                     )
                     legacy_t2 = gr.Checkbox(
                         value=False, label="legacy inpaint"
@@ -2539,6 +2620,7 @@ if __name__ == "__main__":
             hireslatent_t0,
             hiresvalue_t0,
             hiresdenoise_t0,
+            hires_resample_t0,
         ]
         tab1_inputs = [
             prompt_t1,
@@ -2564,6 +2646,7 @@ if __name__ == "__main__":
             colortransfer_t1,
             transfer_methods_t1,
             transfer_amounts_t1,
+            resample_t1,
         ]
         tab2_inputs = [
             prompt_t2,
@@ -2589,6 +2672,7 @@ if __name__ == "__main__":
             colortransfer_t2,
             transfer_methods_t2,
             transfer_amounts_t2,
+            resample_t2,
         ]
         interrogator_inputs = [
             extras_image,
