@@ -2326,10 +2326,10 @@ if __name__ == "__main__":
                         1.01, 50, value=3.5, step=0.01, label="guidance"
                     )
                     width_t0 = gr.Slider(
-                        192, 8192, value=512, step=64, label="width"
+                        64, 16384, value=512, step=64, label="width"
                     )
                     height_t0 = gr.Slider(
-                        192, 8192, value=512, step=64, label="height"
+                        64, 16384, value=512, step=64, label="height"
                     )
                     eta_t0 = gr.Slider(
                         0,
@@ -2358,15 +2358,15 @@ if __name__ == "__main__":
                         label="resample method for rescaling"
                     )
                     hireswidth_t0 = gr.Slider(
-                        192,
-                        8192,
+                        64,
+                        16384,
                         value=768,
                         step=64,
                         label="hires width",
                     )
                     hiresheight_t0 = gr.Slider(
-                        192,
-                        8192,
+                        64,
+                        16384,
                         value=768,
                         step=64,
                         label="hires height",
@@ -2462,10 +2462,10 @@ if __name__ == "__main__":
                         1.01, 50, value=3.5, step=0.01, label="guidance"
                     )
                     width_t1 = gr.Slider(
-                        192, 8192, value=512, step=64, label="width"
+                        64, 16384, value=512, step=64, label="width"
                     )
                     height_t1 = gr.Slider(
-                        192, 8192, value=512, step=64, label="height"
+                        64, 16384, value=512, step=64, label="height"
                     )
                     denoise_t1 = gr.Slider(
                         0, 1, value=0.75, step=0.01, label="denoise strength"
@@ -2574,10 +2574,10 @@ if __name__ == "__main__":
                         1.01, 50, value=3.5, step=0.01, label="guidance"
                     )
                     width_t2 = gr.Slider(
-                        192, 8192, value=512, step=64, label="width"
+                        64, 16384, value=512, step=64, label="width"
                     )
                     height_t2 = gr.Slider(
-                        192, 8192, value=512, step=64, label="height"
+                        64, 16384, value=512, step=64, label="height"
                     )
                     eta_t2 = gr.Slider(
                         0,
