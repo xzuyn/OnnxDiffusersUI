@@ -66,7 +66,8 @@ def run_diffusers(
         transfer_amounts: str,
         hiresfix: bool,
         hireslatent: bool,
-        hiresvalue: float,
+        hiresheight: int,
+        hireswidth: int,
         hiresdenoise: float,
         hires_resample: Optional[str],
 ) -> Tuple[list, str]:
@@ -150,6 +151,7 @@ def run_diffusers(
     if video is False:
         images_for_hires = []
         for i in range(iteration_count):
+            print()
             print(f"iteration {i + 1}/{iteration_count}")
 
             # create generator object from seed
@@ -474,6 +476,7 @@ def run_diffusers(
                 hires_pipe = img2img_cpu()
 
             for i in range(iteration_count):
+                print()
                 print(f"hires iteration {i + 1}/{iteration_count}")
 
                 # create generator object from seed
@@ -483,8 +486,8 @@ def run_diffusers(
                 hires_images = hires_fix(
                     prompt,
                     neg_prompt,
-                    height,
-                    width,
+                    hiresheight,
+                    hireswidth,
                     images_for_hires[i],
                     steps,
                     guidance_scale,
@@ -492,7 +495,6 @@ def run_diffusers(
                     hiresdenoise,
                     batch_size,
                     rng,
-                    hiresvalue,
                     hireslatent,
                     False,
                     hires_resample,
@@ -521,7 +523,7 @@ def run_diffusers(
                 if current_pipe == "img2img":
                     metadata.add_text("Denoise: ", str(denoise_strength))
                 if hiresfix is True and current_pipe == "txt2img":
-                    metadata.add_text("hiresfix: ", str(f"{hiresvalue}x"))
+                    # metadata.add_text("hiresfix: ", str(f"{hiresvalue}x"))
                     metadata.add_text("hires denoise: ", str(f"{hiresdenoise}"))
 
                 # png output
@@ -691,7 +693,7 @@ def run_diffusers(
             if current_pipe == "img2img":
                 info = info + f" denoise: {denoise_strength}"
             if hiresfix is True and current_pipe == "txt2img":
-                info = info + f" [hiresfix: {hiresvalue}x,"
+                # info = info + f" [hiresfix: {hiresvalue}x,"
                 info = info + f" hires denoise: {hiresdenoise}]"
             with open(os.path.join(frames_path, "history.txt"), "a") as log:
                 log.write(info + "\n")
@@ -718,7 +720,7 @@ def run_diffusers(
             if current_pipe == "img2img":
                 metadata.add_text("Denoise: ", str(denoise_strength))
             if hiresfix is True and current_pipe == "txt2img":
-                metadata.add_text("hiresfix: ", str(f"{hiresvalue}x"))
+                # metadata.add_text("hiresfix: ", str(f"{hiresvalue}x"))
                 metadata.add_text("hires denoise: ", str(f"{hiresdenoise}"))
 
             # png output
@@ -1143,8 +1145,10 @@ def txt2img_cpu():
     global vae_on_cpu
 
     if textenc_on_cpu and vae_on_cpu:
+        print()
         print("Using CPU Text Encoder")
         print("Using CPU VAE")
+        print()
         cputextenc = OnnxRuntimeModel.from_pretrained(
             model_path + "/text_encoder"
         )
@@ -1158,9 +1162,12 @@ def txt2img_cpu():
             text_encoder=cputextenc,
             vae_decoder=cpuvaedec,
             vae_encoder=None,
+            low_cpu_mem_usage=False,
         )
     elif textenc_on_cpu:
+        print()
         print("Using CPU Text Encoder")
+        print()
         cputextenc = OnnxRuntimeModel.from_pretrained(
             model_path + "/text_encoder"
         )
@@ -1169,9 +1176,12 @@ def txt2img_cpu():
             provider=provider,
             scheduler=scheduler,
             text_encoder=cputextenc,
+            low_cpu_mem_usage=False,
         )
     elif vae_on_cpu:
+        print()
         print("Using CPU VAE")
+        print()
         cpuvaedec = OnnxRuntimeModel.from_pretrained(
             model_path + "/vae_decoder"
         )
@@ -1181,10 +1191,14 @@ def txt2img_cpu():
             scheduler=scheduler,
             vae_decoder=cpuvaedec,
             vae_encoder=None,
+            low_cpu_mem_usage=False,
         )
     else:
         txt2img = OnnxStableDiffusionPipeline.from_pretrained(
-            model_path, provider=provider, scheduler=scheduler
+            model_path,
+            provider=provider,
+            scheduler=scheduler,
+            low_cpu_mem_usage=False,
         )
 
     return txt2img
@@ -1196,8 +1210,10 @@ def img2img_cpu():
     global vae_on_cpu
 
     if textenc_on_cpu and vae_on_cpu:
+        print()
         print("Using CPU Text Encoder")
         print("Using CPU VAE")
+        print()
         cputextenc = OnnxRuntimeModel.from_pretrained(
             model_path + "/text_encoder"
         )
@@ -1214,9 +1230,12 @@ def img2img_cpu():
             text_encoder=cputextenc,
             vae_decoder=cpuvaedec,
             vae_encoder=cpuvaeenc,
+            low_cpu_mem_usage=False,
         )
     elif textenc_on_cpu:
+        print()
         print("Using CPU Text Encoder")
+        print()
         cputextenc = OnnxRuntimeModel.from_pretrained(
             model_path + "/text_encoder"
         )
@@ -1225,9 +1244,12 @@ def img2img_cpu():
             provider=provider,
             scheduler=scheduler,
             text_encoder=cputextenc,
+            low_cpu_mem_usage=False,
         )
     elif vae_on_cpu:
+        print()
         print("Using CPU VAE")
+        print()
         cpuvaedec = OnnxRuntimeModel.from_pretrained(
             model_path + "/vae_decoder"
         )
@@ -1240,10 +1262,14 @@ def img2img_cpu():
             scheduler=scheduler,
             vae_decoder=cpuvaedec,
             vae_encoder=cpuvaeenc,
+            low_cpu_mem_usage=False,
         )
     else:
         img2img = OnnxStableDiffusionImg2ImgPipeline.from_pretrained(
-            model_path, provider=provider, scheduler=scheduler
+            model_path,
+            provider=provider,
+            scheduler=scheduler,
+            low_cpu_mem_usage=False,
         )
 
     return img2img
@@ -1255,8 +1281,10 @@ def inpaint_cpu():
     global vae_on_cpu
 
     if textenc_on_cpu and vae_on_cpu:
+        print()
         print("Using CPU Text Encoder")
         print("Using CPU VAE")
+        print()
         cputextenc = OnnxRuntimeModel.from_pretrained(
             model_path + "/text_encoder"
         )
@@ -1273,9 +1301,12 @@ def inpaint_cpu():
             text_encoder=cputextenc,
             vae_decoder=cpuvaedec,
             vae_encoder=cpuvaeenc,
+            low_cpu_mem_usage=False,
         )
     elif textenc_on_cpu:
+        print()
         print("Using CPU Text Encoder")
+        print()
         cputextenc = OnnxRuntimeModel.from_pretrained(
             model_path + "/text_encoder"
         )
@@ -1284,9 +1315,12 @@ def inpaint_cpu():
             provider=provider,
             scheduler=scheduler,
             text_encoder=cputextenc,
+            low_cpu_mem_usage=False,
         )
     elif vae_on_cpu:
+        print()
         print("Using CPU VAE")
+        print()
         cpuvaedec = OnnxRuntimeModel.from_pretrained(
             model_path + "/vae_decoder"
         )
@@ -1299,10 +1333,14 @@ def inpaint_cpu():
             scheduler=scheduler,
             vae_decoder=cpuvaedec,
             vae_encoder=cpuvaeenc,
+            low_cpu_mem_usage=False,
         )
     else:
         inpaint = OnnxStableDiffusionInpaintPipeline.from_pretrained(
-            model_path, provider=provider, scheduler=scheduler
+            model_path,
+            provider=provider,
+            scheduler=scheduler,
+            low_cpu_mem_usage=False,
         )
 
     return inpaint
@@ -1314,8 +1352,10 @@ def legacy_inpaint_cpu():
     global vae_on_cpu
 
     if textenc_on_cpu and vae_on_cpu:
+        print()
         print("Using CPU Text Encoder")
         print("Using CPU VAE")
+        print()
         cputextenc = OnnxRuntimeModel.from_pretrained(
             model_path + "/text_encoder"
         )
@@ -1332,9 +1372,12 @@ def legacy_inpaint_cpu():
             text_encoder=cputextenc,
             vae_decoder=cpuvaedec,
             vae_encoder=cpuvaeenc,
+            low_cpu_mem_usage=False,
         )
     elif textenc_on_cpu:
+        print()
         print("Using CPU Text Encoder")
+        print()
         cputextenc = OnnxRuntimeModel.from_pretrained(
             model_path + "/text_encoder"
         )
@@ -1343,9 +1386,12 @@ def legacy_inpaint_cpu():
             provider=provider,
             scheduler=scheduler,
             text_encoder=cputextenc,
+            low_cpu_mem_usage=False,
         )
     elif vae_on_cpu:
+        print()
         print("Using CPU VAE")
+        print()
         cpuvaedec = OnnxRuntimeModel.from_pretrained(
             model_path + "/vae_decoder"
         )
@@ -1358,21 +1404,26 @@ def legacy_inpaint_cpu():
             scheduler=scheduler,
             vae_decoder=cpuvaedec,
             vae_encoder=cpuvaeenc,
+            low_cpu_mem_usage=False,
         )
     else:
         legacy_inpaint = OnnxStableDiffusionInpaintPipelineLegacy.from_pretrained(
-            model_path, provider=provider, scheduler=scheduler
+            model_path,
+            provider=provider,
+            scheduler=scheduler,
+            low_cpu_mem_usage=False,
         )
 
     return legacy_inpaint
 
 
 # TODO: add button to use textenc, vae, or entirely on cpu
+# TODO: add button to control deallocate
 def hires_fix(
         prompt,
         neg_prompt,
-        height,
-        width,
+        hires_height,
+        hires_width,
         lowres,
         steps,
         guidance_scale,
@@ -1380,7 +1431,6 @@ def hires_fix(
         denoise_strength,
         batch_size,
         rng,
-        scale,
         uselatentscaler,
         deallocate,
         hires_resample,
@@ -1401,7 +1451,7 @@ def hires_fix(
         lowres = lowres[0]
 
     print()
-    print(f"[hiresfix {scale}x, {denoise_strength} denoise]")
+    print(f"[hiresfix, {denoise_strength} denoise]")
 
     if hires_resample == "nearest":
         resample = Image.NEAREST
@@ -1420,8 +1470,8 @@ def hires_fix(
 
     lowres_scaled = resize_and_crop(
         lowres,
-        int(height * scale),
-        int(width * scale),
+        hires_height,
+        hires_width,
         resample,
     )
 
@@ -1542,7 +1592,8 @@ def clear_click():
             laststep_t0: 32,
             hiresfix_t0: False,
             hireslatent_t0: False,
-            hiresvalue_t0: 1.75,
+            hireswidth_t0: 768,
+            hiresheight_t0: 768,
             hiresdenoise_t0: 0.75,
         }
     elif current_tab == 1:
@@ -1619,7 +1670,8 @@ def generate_click(
         laststep_t0,
         hiresfix_t0,
         hireslatent_t0,
-        hiresvalue_t0,
+        hiresheight_t0,
+        hireswidth_t0,
         hiresdenoise_t0,
         hires_resample_t0,
         prompt_t1,
@@ -1893,7 +1945,8 @@ def generate_click(
             transfer_amounts_t1,
             hiresfix_t0,
             hireslatent_t0,
-            hiresvalue_t0,
+            hiresheight_t0,
+            hireswidth_t0,
             hiresdenoise_t0,
             hires_resample_t0,
         )
@@ -1952,6 +2005,7 @@ def generate_click(
             transfer_amounts_t1,
             False,
             False,
+            0,
             0,
             0,
             None,
@@ -2032,6 +2086,7 @@ def generate_click(
             transfer_amounts_t2,
             False,
             False,
+            0,
             0,
             0,
             None,
@@ -2257,10 +2312,6 @@ if __name__ == "__main__":
                     sch_t0 = gr.Radio(
                         sched_list, value="DEIS", label="scheduler"
                     )
-                    hires_resample_t0 = gr.Radio(
-                        resample_type_list, value="nearest",
-                        label="resample method for rescaling"
-                    )
                     with gr.Row():
                         iter_t0 = gr.Slider(
                             1, 300, value=1, step=1, label="iteration count"
@@ -2275,10 +2326,10 @@ if __name__ == "__main__":
                         1.01, 50, value=3.5, step=0.01, label="guidance"
                     )
                     width_t0 = gr.Slider(
-                        192, 2048, value=512, step=64, label="width"
+                        192, 8192, value=512, step=64, label="width"
                     )
                     height_t0 = gr.Slider(
-                        192, 2048, value=512, step=64, label="height"
+                        192, 8192, value=512, step=64, label="height"
                     )
                     eta_t0 = gr.Slider(
                         0,
@@ -2302,21 +2353,31 @@ if __name__ == "__main__":
                                                "generation if hiresfix is "
                                                "disabled)"
                         )
-                    with gr.Row():
-                        hiresvalue_t0 = gr.Slider(
-                            1.125,
-                            8,
-                            value=1.75,
-                            step=0.125,
-                            label="hires value",
-                        )
-                        hiresdenoise_t0 = gr.Slider(
-                            0,
-                            1,
-                            value=0.75,
-                            step=0.01,
-                            label="hires denoise",
-                        )
+                    hires_resample_t0 = gr.Radio(
+                        resample_type_list, value="nearest",
+                        label="resample method for rescaling"
+                    )
+                    hireswidth_t0 = gr.Slider(
+                        192,
+                        8192,
+                        value=768,
+                        step=64,
+                        label="hires width",
+                    )
+                    hiresheight_t0 = gr.Slider(
+                        192,
+                        8192,
+                        value=768,
+                        step=64,
+                        label="hires height",
+                    )
+                    hiresdenoise_t0 = gr.Slider(
+                        0,
+                        1,
+                        value=0.75,
+                        step=0.01,
+                        label="hires denoise",
+                    )
                     with gr.Row():
                         video_t0 = gr.Checkbox(
                             value=False, label="create video"
@@ -2401,10 +2462,10 @@ if __name__ == "__main__":
                         1.01, 50, value=3.5, step=0.01, label="guidance"
                     )
                     width_t1 = gr.Slider(
-                        192, 2048, value=512, step=64, label="width"
+                        192, 8192, value=512, step=64, label="width"
                     )
                     height_t1 = gr.Slider(
-                        192, 2048, value=512, step=64, label="height"
+                        192, 8192, value=512, step=64, label="height"
                     )
                     denoise_t1 = gr.Slider(
                         0, 1, value=0.75, step=0.01, label="denoise strength"
@@ -2513,10 +2574,10 @@ if __name__ == "__main__":
                         1.01, 50, value=3.5, step=0.01, label="guidance"
                     )
                     width_t2 = gr.Slider(
-                        192, 2048, value=512, step=64, label="width"
+                        192, 8192, value=512, step=64, label="width"
                     )
                     height_t2 = gr.Slider(
-                        192, 2048, value=512, step=64, label="height"
+                        192, 8192, value=512, step=64, label="height"
                     )
                     eta_t2 = gr.Slider(
                         0,
@@ -2618,7 +2679,8 @@ if __name__ == "__main__":
             laststep_t0,
             hiresfix_t0,
             hireslatent_t0,
-            hiresvalue_t0,
+            hiresheight_t0,
+            hireswidth_t0,
             hiresdenoise_t0,
             hires_resample_t0,
         ]
