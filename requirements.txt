@@ -1,5 +1,5 @@
-numpy==1.23.5
-diffusers
+numpy
+diffusers==0.14.0
 torch
 gradio
 scipy
@@ -9,7 +9,7 @@ spacy
 colortrans
 opencv-python
 clip-interrogator
-transformers==4.26.1
+transformers
 onnx
 onnxconverter-common
 onnxruntime-directml
